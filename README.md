@@ -1,10 +1,12 @@
-# Diorama
-
-Run your Compose app inside a simulated device, on one real device, and switch devices live.
+<div align="center">
+  <img src="docs/art.png" width="360" alt="Diorama" />
+  <h1>Diorama</h1>
+  <p><b>Run your Compose app inside a simulated device and swap the hardware live. One real phone is enough.</b></p>
+</div>
 
 A diorama is a scale model of a scene built to be looked at, which is what this is: a miniature,
-faithful model of a device holding your actual, interactive app. It is the Jetpack Compose
-counterpart to Flutter's [`device_preview`](https://pub.dev/packages/device_preview).
+faithful model of a device holding your actual, interactive app. Inspired by Flutter's
+[`device_preview`](https://pub.dev/packages/device_preview).
 
 ```kotlin
 setContent {

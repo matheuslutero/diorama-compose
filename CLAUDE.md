@@ -1,7 +1,7 @@
 # Diorama
 
 A Compose library that runs a real app inside a simulated device, on one physical device, with live
-device switching. The Jetpack Compose counterpart to Flutter's `device_preview`.
+device switching. Inspired by Flutter's `device_preview`.
 
 Read [docs/architecture.md](docs/architecture.md) before changing anything structural.
 
