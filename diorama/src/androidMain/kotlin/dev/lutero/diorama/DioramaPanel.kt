@@ -43,6 +43,8 @@ private val Line = Color.White.copy(alpha = 0.08f)
 // visibly lighter tone.
 private val TrackIdle = Color.White.copy(alpha = 0.14f)
 
+private val EdgeInset = 16.dp
+
 /**
  * The font scales Android's own Settings offers, from the display sizes through the accessibility
  * range. A continuous slider reads 0.8558874x, which no user can produce and no bug report will ever
@@ -53,34 +55,38 @@ private val FontScales = listOf(0.85f, 1f, 1.15f, 1.3f, 1.5f, 1.8f, 2f)
 // TODO(tools): make the sections pluggable via `tools: List<DioramaTool>` composed into this column,
 //   so extensions (screenshot capture being the obvious first one) can add UI without this file
 //   knowing about them.
+//
+// The horizontal inset lives on each section, not on the column: the chip rows scroll edge to edge,
+// so a column-wide padding would clip them 16dp before the screen.
 @Composable
 internal fun DioramaPanel(state: DioramaState, modifier: Modifier = Modifier) {
+  val inset = Modifier.padding(horizontal = EdgeInset)
   Column(
     modifier
       .verticalScroll(rememberScrollState())
-      .padding(horizontal = 16.dp)
       .padding(bottom = 16.dp),
     verticalArrangement = Arrangement.spacedBy(12.dp),
   ) {
-    Label("Device")
+    Label("Device", inset)
     CategoryRow(state)
     DeviceRow(state)
-    SpecReadout(state)
+    SpecReadout(state, inset)
 
-    Divider()
+    Divider(inset)
 
-    Label("Layout")
-    ToggleRow("Device frame", state.isFrameVisible) { state.isFrameVisible = it }
+    Label("Layout", inset)
+    ToggleRow("Device frame", state.isFrameVisible, modifier = inset) { state.isFrameVisible = it }
     ToggleRow(
       label = "Landscape",
       checked = state.orientation == Orientation.Landscape,
       enabled = state.device.canRotate,
+      modifier = inset,
     ) { state.rotate() }
 
-    Divider()
+    Divider(inset)
 
-    Label("System")
-    ToggleRow("Dark mode", state.darkMode) { state.darkMode = it }
+    Label("System", inset)
+    ToggleRow("Dark mode", state.darkMode, modifier = inset) { state.darkMode = it }
     val scaleIndex = FontScales.indexOfFirst { it >= state.fontScale }.coerceAtLeast(0)
     SliderRow(
       label = "Font scale",
@@ -88,6 +94,7 @@ internal fun DioramaPanel(state: DioramaState, modifier: Modifier = Modifier) {
       current = scaleIndex.toFloat(),
       range = 0f..FontScales.lastIndex.toFloat(),
       steps = FontScales.size - 2,
+      modifier = inset,
     ) { state.fontScale = FontScales[it.roundToInt().coerceIn(FontScales.indices)] }
   }
 }
@@ -105,7 +112,9 @@ private fun CategoryRow(state: DioramaState) {
   }
 
   Row(
-    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+    // Padding after horizontalScroll: the viewport spans the full width, the inset scrolls away
+    // with the content instead of clipping it.
+    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = EdgeInset),
     horizontalArrangement = Arrangement.spacedBy(6.dp),
   ) {
     categories.forEach { category ->
@@ -123,13 +132,13 @@ private fun CategoryRow(state: DioramaState) {
 @Composable
 private fun DeviceRow(state: DioramaState) {
   if (state.isCustomSelected) {
-    CustomDeviceEditor(state)
+    CustomDeviceEditor(state, Modifier.padding(horizontal = EdgeInset))
     return
   }
 
   val group = state.devices.filter { it.category == state.device.category }
   Row(
-    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = EdgeInset),
     horizontalArrangement = Arrangement.spacedBy(6.dp),
   ) {
     group.forEach { spec ->
@@ -144,7 +153,7 @@ private fun DeviceRow(state: DioramaState) {
  * instead of 240 still looks plausible in dp and quietly loads the wrong drawable bucket.
  */
 @Composable
-private fun SpecReadout(state: DioramaState) {
+private fun SpecReadout(state: DioramaState, modifier: Modifier = Modifier) {
   val spec = state.device
   val size = spec.sizeFor(state.orientation)
   val widthDp = size.width.value.roundToInt()
@@ -153,7 +162,7 @@ private fun SpecReadout(state: DioramaState) {
   val heightPx = (size.height.value * spec.density).roundToInt()
 
   Row(
-    Modifier
+    modifier
       .fillMaxWidth()
       .clip(RoundedCornerShape(8.dp))
       .background(Raised)
@@ -181,10 +190,10 @@ private fun Metric(value: String, unit: String) {
 }
 
 @Composable
-private fun CustomDeviceEditor(state: DioramaState) {
+private fun CustomDeviceEditor(state: DioramaState, modifier: Modifier = Modifier) {
   val size = state.customDevice.screenSize
 
-  Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+  Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
     SliderRow(
       label = "Width",
       value = "${size.width.value.roundToInt()} dp",
@@ -229,15 +238,16 @@ private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun Divider() = HorizontalDivider(color = Line)
+private fun Divider(modifier: Modifier = Modifier) = HorizontalDivider(modifier, color = Line)
 
 @Composable
-private fun Label(text: String) {
+private fun Label(text: String, modifier: Modifier = Modifier) {
   Text(
     text.uppercase(),
     style = MaterialTheme.typography.labelSmall,
     color = Muted,
     letterSpacing = 1.sp,
+    modifier = modifier,
   )
 }
 
@@ -248,9 +258,10 @@ private fun SliderRow(
   current: Float,
   range: ClosedFloatingPointRange<Float>,
   steps: Int = 0,
+  modifier: Modifier = Modifier,
   onChange: (Float) -> Unit,
 ) {
-  Column {
+  Column(modifier) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
       Text(label, style = MaterialTheme.typography.bodySmall, color = Ink)
       Text(value, fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Signal)
@@ -276,10 +287,11 @@ private fun ToggleRow(
   label: String,
   checked: Boolean,
   enabled: Boolean = true,
+  modifier: Modifier = Modifier,
   onCheckedChange: (Boolean) -> Unit,
 ) {
   Row(
-    Modifier.fillMaxWidth(),
+    modifier.fillMaxWidth(),
     horizontalArrangement = Arrangement.SpaceBetween,
     verticalAlignment = Alignment.CenterVertically,
   ) {
