@@ -32,3 +32,5 @@ rootProject.name = "diorama"
 include(":diorama-frame")
 
 include(":diorama")
+
+include(":sample")
