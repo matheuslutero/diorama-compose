@@ -5,8 +5,7 @@ plugins {
   alias(libs.plugins.compose.compiler)
 }
 
-// Geometry and device catalog only. Nothing here may touch android.content.Context — that is what
-// keeps this module portable, and separately consumable the way device_frame is in Flutter.
+// Nothing here may touch android.content.Context; this module stays portable.
 kotlin {
   androidLibrary {
     namespace = "dev.lutero.diorama.frame"

@@ -39,25 +39,19 @@ private val Muted = Color(0xFF8A8A99)
 private val Raised = Color(0xFF22222B)
 private val Line = Color.White.copy(alpha = 0.08f)
 
-// Raised is indistinguishable from PanelBackground as a slider track; the idle track needs its own,
-// visibly lighter tone.
+// Raised disappears against PanelBackground as a slider track.
 private val TrackIdle = Color.White.copy(alpha = 0.14f)
 
 private val EdgeInset = 16.dp
 
-/**
- * The font scales Android's own Settings offers, from the display sizes through the accessibility
- * range. A continuous slider reads 0.8558874x, which no user can produce and no bug report will ever
- * cite.
- */
+/** The font scales Android's own Settings offers. */
 private val FontScales = listOf(0.85f, 1f, 1.15f, 1.3f, 1.5f, 1.8f, 2f)
 
 // TODO(tools): make the sections pluggable via `tools: List<DioramaTool>` composed into this column,
 //   so extensions (screenshot capture being the obvious first one) can add UI without this file
 //   knowing about them.
 //
-// The horizontal inset lives on each section, not on the column: the chip rows scroll edge to edge,
-// so a column-wide padding would clip them 16dp before the screen.
+// The horizontal inset lives on each section, not on the column: the chip rows scroll edge to edge.
 @Composable
 internal fun DioramaPanel(state: DioramaState, modifier: Modifier = Modifier) {
   val inset = Modifier.padding(horizontal = EdgeInset)
@@ -99,11 +93,8 @@ internal fun DioramaPanel(state: DioramaState, modifier: Modifier = Modifier) {
   }
 }
 
-/**
- * The catalog's categories are already how a developer thinks about size, so they are the primary
- * control. Selection is derived from the current device rather than tracked separately, which keeps
- * the row honest when the device changes from anywhere else.
- */
+/** Selection is derived from the current device, so the row stays correct when the device changes
+ * from anywhere else. */
 @Composable
 private fun CategoryRow(state: DioramaState) {
   val current = state.device.category
@@ -112,8 +103,7 @@ private fun CategoryRow(state: DioramaState) {
   }
 
   Row(
-    // Padding after horizontalScroll: the viewport spans the full width, the inset scrolls away
-    // with the content instead of clipping it.
+    // padding after horizontalScroll, so the inset scrolls with the content instead of clipping it
     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = EdgeInset),
     horizontalArrangement = Arrangement.spacedBy(6.dp),
   ) {
@@ -147,11 +137,7 @@ private fun DeviceRow(state: DioramaState) {
   }
 }
 
-/**
- * Both coordinate spaces at once, in mono. dp is what the app lays out in and px is what it renders
- * into, and the gap between them is exactly what a wrong dpi hides: a tablet reported at 159dpi
- * instead of 240 still looks plausible in dp and quietly loads the wrong drawable bucket.
- */
+/** Both coordinate spaces at once: a wrong dpi still looks plausible in dp alone. */
 @Composable
 private fun SpecReadout(state: DioramaState, modifier: Modifier = Modifier) {
   val spec = state.device
@@ -208,8 +194,6 @@ private fun CustomDeviceEditor(state: DioramaState, modifier: Modifier = Modifie
       range = CustomDevice.HeightRange.start.value..CustomDevice.HeightRange.endInclusive.value,
     ) { state.updateCustomDevice(height = it.roundToInt().dp) }
 
-    // Stepped through the real DisplayMetrics buckets: a continuous slider would offer 271dpi, which
-    // no device reports and Android would snap away anyway.
     val densities = CustomDevice.Densities
     val index = densities.indexOf(state.customDevice.dpi).coerceAtLeast(0)
     SliderRow(
@@ -304,8 +288,7 @@ private fun ToggleRow(
       checked = checked,
       onCheckedChange = onCheckedChange,
       enabled = enabled,
-      // The disabled slots must be pinned too: they otherwise resolve from the host app's
-      // MaterialTheme, which leaks a light-scheme switch into this dark panel.
+      // disabled slots otherwise resolve from the host app's light MaterialTheme
       colors = SwitchDefaults.colors(
         checkedThumbColor = Color.White,
         checkedTrackColor = Signal,

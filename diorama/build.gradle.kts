@@ -5,10 +5,7 @@ plugins {
   alias(libs.plugins.compose.compiler)
 }
 
-// Android-only for now: the configuration-override engine is built on Configuration and
-// ContextThemeWrapper, which have no counterpart on other targets. Other platforms plug in later
-// through an expect/actual seam in commonMain — density, layout direction and window size are all
-// expressible everywhere; only the Context/Configuration half is Android-specific.
+// Android-only: the override engine is built on Configuration/ContextThemeWrapper.
 kotlin {
   androidLibrary {
     namespace = "dev.lutero.diorama"

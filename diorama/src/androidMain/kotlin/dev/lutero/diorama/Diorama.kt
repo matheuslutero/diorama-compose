@@ -32,7 +32,7 @@ import dev.lutero.diorama.frame.Devices
 
 private val BezelWidth = 12.dp
 
-/** Light enough to read the near-black bezel against, like a backdrop behind a model. */
+/** Light enough to read the near-black bezel against. */
 internal val StageBackground = Color(0xFFCECED6)
 internal val PanelBackground = Color(0xFF16161C)
 
@@ -63,14 +63,11 @@ fun Diorama(
 ) {
   val currentContent by rememberUpdatedState(content)
 
-  // movableContentOf preserves the app's composition, and so all of its state, as it moves between
-  // the simulated and unsimulated branches and across device switches. device_preview needs a
-  // GlobalKey for the same reason; without it every toggle remounts the app from scratch.
+  // movableContentOf keeps the app's composition (and so its state) alive across the simulated and
+  // unsimulated branches; without it every toggle remounts the app from scratch.
   val app = remember { movableContentOf { currentContent() } }
 
   BoxWithConstraints(modifier.fillMaxSize().background(StageBackground)) {
-    // Capped so the device never loses the stage entirely: the point of opening the drawer is to
-    // watch the device react to it.
     val drawerMaxHeight = maxHeight * 0.5f
 
     Column(Modifier.fillMaxSize()) {
@@ -78,8 +75,6 @@ fun Diorama(
         if (state.isEnabled) Stage(state, app) else app()
       }
 
-      // The drawer displaces the stage rather than covering it. A ModalBottomSheet would sit over
-      // the device and dim it, which hides the one thing every control in here exists to change.
       Surface(color = PanelBackground, contentColor = Color.White) {
         Column(Modifier.navigationBarsPadding()) {
           DioramaBar(state)
@@ -98,8 +93,7 @@ fun Diorama(
 
 @Composable
 private fun Stage(state: DioramaState, app: @Composable () -> Unit) {
-  // Keeps the frame clear of the host's status bar and cutout. The bar below handles the
-  // navigation bar, so the stage deliberately does not pad for it.
+  // no navigationBarsPadding here: the dock below owns it
   Box(
     Modifier.fillMaxSize().statusBarsPadding().displayCutoutPadding().padding(16.dp),
     contentAlignment = Alignment.Center,
@@ -113,8 +107,7 @@ private fun Stage(state: DioramaState, app: @Composable () -> Unit) {
       val screen = state.device.sizeFor(state.orientation)
       val bezel = if (state.isFrameVisible) BezelWidth else 0.dp
 
-      // Measure bezel and screen as one unit so a single scale covers both; DeviceFrame pads the
-      // bezel back off, handing the app exactly `screen`.
+      // bezel and screen scale as one unit; DeviceFrame pads the bezel back off
       DeviceViewport(DpSize(screen.width + bezel * 2, screen.height + bezel * 2)) {
         DeviceFrame(bezel) { app() }
       }

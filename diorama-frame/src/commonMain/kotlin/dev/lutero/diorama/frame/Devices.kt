@@ -89,8 +89,8 @@ object Devices {
     platform = DevicePlatform.Desktop,
   )
 
-  // desktop.xml, id "desktop_medium": 3840x2160 px @ 320dpi. Same dp as LargeDesktop at twice the
-  // density, which is the point: a 4K panel at 2x scaling against a 1080p panel at 1x.
+  // desktop.xml, id "desktop_medium": 3840x2160 px @ 320dpi. Same dp as LargeDesktop at twice
+  // the density: a 4K panel at 2x scaling against a 1080p panel at 1x.
   val MediumDesktop = DeviceSpec(
     id = "desktop_medium",
     name = "Medium Desktop (HiDPI)",

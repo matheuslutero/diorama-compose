@@ -3,8 +3,6 @@ plugins {
   alias(libs.plugins.compose.compiler)
 }
 
-// A plain Android app rather than KMP: AGP 9 carries Kotlin built in, and the sample only ever
-// needs to run on Android.
 android {
   namespace = "dev.lutero.diorama.sample"
   compileSdk = libs.versions.android.compileSdk.get().toInt()

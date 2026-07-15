@@ -32,9 +32,8 @@ class DioramaState(
   var isFrameVisible by mutableStateOf(true)
 
   /**
-   * Defaults to 1f rather than the host's value on purpose. Configuration.updateFrom merges onto
-   * the host config, so any axis left unset inherits it: a device with a 2x accessibility font
-   * scale would otherwise render every simulated device at 2x.
+   * Defaults to 1f on purpose: Configuration.updateFrom merges onto the host config, so an unset
+   * axis inherits the host's accessibility font scale.
    */
   var fontScale by mutableFloatStateOf(1f)
 
@@ -68,9 +67,6 @@ class DioramaState(
 }
 
 /**
- * Survives Activity recreation, which rotating the host triggers. Losing the simulated device on
- * every rotation defeats the tool.
- *
  * Catalog devices are stored by id rather than by value, since DeviceSpec is not Parcelable. The
  * custom device has no id to look up, so its three editable fields are stored instead.
  */
@@ -94,9 +90,8 @@ private fun dioramaStateSaver(
         state.customDevice.dpi,
       )
     },
-    // Restores through the public API rather than the backing fields, so a restore cannot produce a
-    // state the API would refuse: landscape on a device that cannot rotate falls back to portrait
-    // exactly as selectDevice would enforce it live.
+    // Restoring through the public API cannot produce a state the API would refuse, e.g. landscape
+    // on a device that cannot rotate.
     restore = { saved ->
       DioramaState(devices, initialDevice).apply {
         updateCustomDevice(

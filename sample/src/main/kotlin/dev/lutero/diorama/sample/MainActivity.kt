@@ -33,10 +33,7 @@ class MainActivity : ComponentActivity() {
   }
 }
 
-/**
- * Reports the values the simulation is supposed to drive, so the sample doubles as a live check
- * that the overrides reach an ordinary app: switching device in the panel should move every line.
- */
+/** Reports the values the simulation drives; every line should move on a device switch. */
 @Composable
 private fun SampleApp() {
   val dark = isSystemInDarkTheme()
