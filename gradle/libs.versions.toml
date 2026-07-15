@@ -1,0 +1,27 @@
+[versions]
+kotlin = "2.4.0"
+agp = "9.0.1"
+compose-multiplatform = "1.11.1"
+android-compileSdk = "36"
+android-minSdk = "24"
+android-targetSdk = "36"
+androidx-activity-compose = "1.13.0"
+androidx-window = "1.5.1"
+androidx-compose-adaptive = "1.2.0"
+androidx-compose = "1.11.4"
+androidx-compose-material3 = "1.4.0"
+
+[libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
+androidx-window = { module = "androidx.window:window", version.ref = "androidx-window" }
+androidx-compose-adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "androidx-compose-adaptive" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidx-compose" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidx-compose" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "androidx-compose-material3" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
