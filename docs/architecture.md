@@ -35,14 +35,15 @@ The first is Android-specific. The second is pure Compose. That line is the modu
 ```
 Diorama                          entry point; owns movableContentOf
 └─ Column
-   ├─ Box (weight 1)
+   ├─ Box (weight 1)             shrinks when the drawer opens
    │  └─ Stage                   statusBarsPadding + displayCutoutPadding
    │     └─ DeviceOverride       Context, Configuration, density, layoutDirection, WindowInfo
    │        └─ DeviceViewport    Constraints.fixed(devicePx) → placeWithLayer(scale)
    │           └─ DeviceFrame    bezel, in device dp, inside the scaled layer
    │              └─ app()
-   └─ DioramaBar                 navigationBarsPadding; always present
-ModalBottomSheet                 DioramaPanel, sibling, own window
+   └─ Surface                    the dock; navigationBarsPadding
+      ├─ DioramaBar              always present
+      └─ DioramaPanel            AnimatedVisibility, capped at half the height
 ```
 
 Three things about that tree are deliberate.
@@ -52,6 +53,12 @@ tool's own UI structurally cannot see them. Flutter's device_preview has to boot
 `Directionality`, `Localizations` and `Navigator` for the same reason, because it sits above the
 user's `MaterialApp`. Compose has no "app widget" that owns those, so a sibling composable in a
 `Column` is the whole solution.
+
+**The drawer displaces the stage; it never covers it.** Every control in the panel exists to change
+the device, so hiding the device while they are in reach defeats the tool. A `ModalBottomSheet` was
+tried and removed: it sits over the preview and dims it, so dragging font scale changed something
+you could not see. The drawer is an ordinary `Column` sibling instead, and the stage rescales as it
+opens.
 
 **The bezel is inside the scaled layer.** `DeviceViewport` measures at `screen + bezel * 2` and
 `DeviceFrame` pads the bezel back off, handing the app exactly `screen`. A bezel drawn outside the

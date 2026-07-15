@@ -1,16 +1,20 @@
 package dev.lutero.diorama
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.displayCutoutPadding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
@@ -22,52 +26,72 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import dev.lutero.diorama.frame.DeviceFrame
+import dev.lutero.diorama.frame.DeviceSpec
 import dev.lutero.diorama.frame.DeviceViewport
+import dev.lutero.diorama.frame.Devices
 
 private val BezelWidth = 12.dp
 
 /** Light enough to read the near-black bezel against, like a backdrop behind a model. */
-private val StageBackground = Color(0xFFCECED6)
+internal val StageBackground = Color(0xFFCECED6)
+internal val PanelBackground = Color(0xFF16161C)
 
 /**
  * Wraps an app so it renders inside a simulated device, with a bar to toggle the simulation and
- * open the settings sheet.
+ * open the settings drawer.
  *
  * Unlike Flutter's device_preview this takes the content directly rather than a builder: a
  * @Composable lambda re-executes wherever it is invoked, so it reads whatever CompositionLocals
  * are in scope at the call site with no indirection needed.
+ *
+ * Pass [devices] to extend or replace the catalog. A DeviceSpec is an ordinary data class, so a
+ * project can add its own hardware without this library knowing about it:
+ *
+ * ```
+ * Diorama(devices = Devices.All + DeviceSpec("kiosk", "Kiosk", DpSize(1024.dp, 600.dp), dpi = 160))
+ * ```
+ *
+ * The panel also carries one runtime-editable device, so a size can be dialled in without a
+ * rebuild. See [DioramaState.customDevice].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Diorama(
   modifier: Modifier = Modifier,
-  state: DioramaState = rememberDioramaState(),
+  devices: List<DeviceSpec> = Devices.All,
+  state: DioramaState = rememberDioramaState(devices),
   content: @Composable () -> Unit,
 ) {
   val currentContent by rememberUpdatedState(content)
 
-  // movableContentOf preserves the app's composition — and so all of its state — as it moves
-  // between the simulated and unsimulated branches and across device switches. device_preview needs
-  // a GlobalKey for the same reason; without it every toggle remounts the app from scratch.
+  // movableContentOf preserves the app's composition, and so all of its state, as it moves between
+  // the simulated and unsimulated branches and across device switches. device_preview needs a
+  // GlobalKey for the same reason; without it every toggle remounts the app from scratch.
   val app = remember { movableContentOf { currentContent() } }
 
-  Column(modifier.fillMaxSize().background(StageBackground)) {
-    Box(Modifier.weight(1f).fillMaxWidth()) {
-      if (state.isEnabled) Stage(state, app) else app()
-    }
-    DioramaBar(state)
-  }
+  BoxWithConstraints(modifier.fillMaxSize().background(StageBackground)) {
+    // Capped so the device never loses the stage entirely: the point of opening the drawer is to
+    // watch the device react to it.
+    val drawerMaxHeight = maxHeight * 0.5f
 
-  if (state.isPanelOpen) {
-    // The sheet is a sibling of the preview rather than an ancestor, and gets its own window, so
-    // the device overrides cannot reach the panel's own UI.
-    ModalBottomSheet(
-      onDismissRequest = { state.isPanelOpen = false },
-      sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-      containerColor = Color(0xFF1B1B20),
-      contentColor = Color.White,
-    ) {
-      DioramaPanel(state)
+    Column(Modifier.fillMaxSize()) {
+      Box(Modifier.weight(1f).fillMaxWidth()) {
+        if (state.isEnabled) Stage(state, app) else app()
+      }
+
+      // The drawer displaces the stage rather than covering it. A ModalBottomSheet would sit over
+      // the device and dim it, which hides the one thing every control in here exists to change.
+      Surface(color = PanelBackground, contentColor = Color.White) {
+        Column(Modifier.navigationBarsPadding()) {
+          DioramaBar(state)
+          AnimatedVisibility(
+            visible = state.isPanelOpen,
+            enter = expandVertically(),
+            exit = shrinkVertically(),
+          ) {
+            DioramaPanel(state, Modifier.heightIn(max = drawerMaxHeight))
+          }
+        }
+      }
     }
   }
 }

@@ -59,6 +59,11 @@ worse than one that is visibly incomplete.
   inherits it silently.
 - **The panel stays a sibling of the preview, never an ancestor.** That is what keeps the overrides
   out of the tool's own UI.
+- **The panel never covers the stage.** Every control in it changes the device; hiding the device
+  while they are in reach defeats the tool. It displaces the stage and the device rescales.
+- **Offer only values a device can report.** Density steps through the real `DisplayMetrics` buckets
+  and font scale through the values Android's Settings offers. A free slider invents 271dpi and
+  0.8558874x, which no device produces and no bug report will ever cite.
 - **`:diorama-frame` may not touch `android.content.Context`.** That boundary is what keeps it
   portable.
 - **The bar stays visible when the simulation is off.** It is the only way back in.

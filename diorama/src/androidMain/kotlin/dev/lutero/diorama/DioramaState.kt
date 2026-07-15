@@ -9,25 +9,56 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import dev.lutero.diorama.frame.CustomDevice
 import dev.lutero.diorama.frame.DeviceSpec
 import dev.lutero.diorama.frame.Devices
 import dev.lutero.diorama.frame.Orientation
 
 @Stable
-class DioramaState(initialDevice: DeviceSpec) {
+class DioramaState(
+  /** The picker's catalog. Pass your own to add devices or replace the defaults entirely. */
+  val devices: List<DeviceSpec>,
+  initialDevice: DeviceSpec,
+) {
   var isEnabled by mutableStateOf(true)
   var isPanelOpen by mutableStateOf(false)
   var device by mutableStateOf(initialDevice)
+    private set
   var orientation by mutableStateOf(Orientation.Portrait)
+    private set
   var darkMode by mutableStateOf(false)
   var isFrameVisible by mutableStateOf(true)
 
   /**
    * Defaults to 1f rather than the host's value on purpose. Configuration.updateFrom merges onto
-   * the host config, so any axis left unset inherits it — a device with a 2x accessibility font
+   * the host config, so any axis left unset inherits it: a device with a 2x accessibility font
    * scale would otherwise render every simulated device at 2x.
    */
   var fontScale by mutableFloatStateOf(1f)
+
+  /** Editable at runtime. Kept even while a catalog device is selected, so edits are not lost. */
+  var customDevice by mutableStateOf(CustomDevice.Default)
+    private set
+
+  val isCustomSelected: Boolean get() = device.id == CustomDevice.Id
+
+  fun selectDevice(spec: DeviceSpec) {
+    device = spec
+    if (!spec.canRotate) orientation = Orientation.Portrait
+  }
+
+  fun selectCustomDevice() = selectDevice(customDevice)
+
+  fun updateCustomDevice(
+    width: Dp = customDevice.screenSize.width,
+    height: Dp = customDevice.screenSize.height,
+    dpi: Int = customDevice.dpi,
+  ) {
+    customDevice = CustomDevice.of(width, height, dpi)
+    if (isCustomSelected) device = customDevice
+  }
 
   fun rotate() {
     if (!device.canRotate) return
@@ -37,15 +68,17 @@ class DioramaState(initialDevice: DeviceSpec) {
 }
 
 /**
- * Survives Activity recreation, which rotating the host triggers — losing the simulated device on
+ * Survives Activity recreation, which rotating the host triggers. Losing the simulated device on
  * every rotation defeats the tool.
  *
- * The device is stored by id rather than by value: DeviceSpec is not Parcelable, and the id is the
- * stable identifier anyway. [initialDevice] joins the lookup so a caller-supplied device outside
- * [Devices.All] still restores.
+ * Catalog devices are stored by id rather than by value, since DeviceSpec is not Parcelable. The
+ * custom device has no id to look up, so its three editable fields are stored instead.
  */
-private fun dioramaStateSaver(initialDevice: DeviceSpec): Saver<DioramaState, Any> {
-  val byId = (Devices.All + initialDevice).associateBy { it.id }
+private fun dioramaStateSaver(
+  devices: List<DeviceSpec>,
+  initialDevice: DeviceSpec,
+): Saver<DioramaState, Any> {
+  val byId = (devices + initialDevice).associateBy { it.id }
   return listSaver(
     save = { state ->
       listOf(
@@ -56,13 +89,28 @@ private fun dioramaStateSaver(initialDevice: DeviceSpec): Saver<DioramaState, An
         state.darkMode,
         state.isFrameVisible,
         state.fontScale,
+        state.customDevice.screenSize.width.value,
+        state.customDevice.screenSize.height.value,
+        state.customDevice.dpi,
       )
     },
+    // Restores through the public API rather than the backing fields, so a restore cannot produce a
+    // state the API would refuse: landscape on a device that cannot rotate falls back to portrait
+    // exactly as selectDevice would enforce it live.
     restore = { saved ->
-      DioramaState(byId[saved[2] as String] ?: initialDevice).apply {
+      DioramaState(devices, initialDevice).apply {
+        updateCustomDevice(
+          width = (saved[7] as Float).dp,
+          height = (saved[8] as Float).dp,
+          dpi = saved[9] as Int,
+        )
+        val savedId = saved[2] as String
+        selectDevice(
+          if (savedId == CustomDevice.Id) customDevice else byId[savedId] ?: initialDevice
+        )
+        if (Orientation.valueOf(saved[3] as String) == Orientation.Landscape) rotate()
         isEnabled = saved[0] as Boolean
         isPanelOpen = saved[1] as Boolean
-        orientation = Orientation.valueOf(saved[3] as String)
         darkMode = saved[4] as Boolean
         isFrameVisible = saved[5] as Boolean
         fontScale = saved[6] as Float
@@ -72,9 +120,12 @@ private fun dioramaStateSaver(initialDevice: DeviceSpec): Saver<DioramaState, An
 }
 
 // TODO(persistence): DataStore, written from snapshotFlow { ... }.debounce(500), to carry settings
-//   across process death and relaunches. The saver below only covers configuration changes.
+//   across process death and relaunches. The saver above only covers configuration changes.
 @Composable
-fun rememberDioramaState(initialDevice: DeviceSpec = Devices.Phone): DioramaState =
-  rememberSaveable(initialDevice, saver = dioramaStateSaver(initialDevice)) {
-    DioramaState(initialDevice)
+fun rememberDioramaState(
+  devices: List<DeviceSpec> = Devices.All,
+  initialDevice: DeviceSpec = devices.first(),
+): DioramaState =
+  rememberSaveable(devices, initialDevice, saver = dioramaStateSaver(devices, initialDevice)) {
+    DioramaState(devices, initialDevice)
   }

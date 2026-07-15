@@ -1,30 +1,52 @@
 package dev.lutero.diorama
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.lutero.diorama.frame.CustomDevice
+import dev.lutero.diorama.frame.DeviceCategory
 import dev.lutero.diorama.frame.DeviceSpec
-import dev.lutero.diorama.frame.Devices
 import dev.lutero.diorama.frame.Orientation
+import kotlin.math.roundToInt
 
-// TODO(tools): make the sections pluggable — `tools: List<DioramaTool>` composed into this column,
+private val Signal = Color(0xFF7AA2F7)
+private val Ink = Color(0xFFECECF1)
+private val Muted = Color(0xFF8A8A99)
+private val Raised = Color(0xFF22222B)
+private val Line = Color.White.copy(alpha = 0.08f)
+
+/**
+ * The font scales Android's own Settings offers, from the display sizes through the accessibility
+ * range. A continuous slider reads 0.8558874x, which no user can produce and no bug report will ever
+ * cite.
+ */
+private val FontScales = listOf(0.85f, 1f, 1.15f, 1.3f, 1.5f, 1.8f, 2f)
+
+// TODO(tools): make the sections pluggable via `tools: List<DioramaTool>` composed into this column,
 //   so extensions (screenshot capture being the obvious first one) can add UI without this file
 //   knowing about them.
 @Composable
@@ -32,22 +54,19 @@ internal fun DioramaPanel(state: DioramaState, modifier: Modifier = Modifier) {
   Column(
     modifier
       .verticalScroll(rememberScrollState())
-      .navigationBarsPadding()
-      .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
-    verticalArrangement = Arrangement.spacedBy(10.dp),
+      .padding(horizontal = 16.dp)
+      .padding(bottom = 16.dp),
+    verticalArrangement = Arrangement.spacedBy(12.dp),
   ) {
-    SectionTitle("Device")
-    Devices.All.forEach { spec ->
-      DeviceRow(spec, selected = spec.id == state.device.id) {
-        state.device = spec
-        if (!spec.canRotate) state.orientation = Orientation.Portrait
-      }
-    }
+    Label("Device")
+    CategoryRow(state)
+    DeviceRow(state)
+    SpecReadout(state)
 
     Divider()
 
-    SectionTitle("Layout")
-    ToggleRow("Show frame", state.isFrameVisible) { state.isFrameVisible = it }
+    Label("Layout")
+    ToggleRow("Device frame", state.isFrameVisible) { state.isFrameVisible = it }
     ToggleRow(
       label = "Landscape",
       checked = state.orientation == Orientation.Landscape,
@@ -56,48 +75,194 @@ internal fun DioramaPanel(state: DioramaState, modifier: Modifier = Modifier) {
 
     Divider()
 
-    SectionTitle("System")
+    Label("System")
     ToggleRow("Dark mode", state.darkMode) { state.darkMode = it }
-    Text("Font scale  ${formatScale(state.fontScale)}", style = MaterialTheme.typography.bodySmall)
-    Slider(
-      value = state.fontScale,
-      onValueChange = { state.fontScale = it },
-      valueRange = 0.85f..2f,
-    )
+    val scaleIndex = FontScales.indexOfFirst { it >= state.fontScale }.coerceAtLeast(0)
+    SliderRow(
+      label = "Font scale",
+      value = formatScale(state.fontScale),
+      current = scaleIndex.toFloat(),
+      range = 0f..FontScales.lastIndex.toFloat(),
+      steps = FontScales.size - 2,
+    ) { state.fontScale = FontScales[it.roundToInt().coerceIn(FontScales.indices)] }
+  }
+}
+
+/**
+ * The catalog's categories are already how a developer thinks about size, so they are the primary
+ * control. Selection is derived from the current device rather than tracked separately, which keeps
+ * the row honest when the device changes from anywhere else.
+ */
+@Composable
+private fun CategoryRow(state: DioramaState) {
+  val current = state.device.category
+  val categories = DeviceCategory.entries.filter { category ->
+    category == DeviceCategory.Custom || state.devices.any { it.category == category }
+  }
+
+  Row(
+    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+    horizontalArrangement = Arrangement.spacedBy(6.dp),
+  ) {
+    categories.forEach { category ->
+      Chip(label = category.name, selected = category == current) {
+        if (category == DeviceCategory.Custom) {
+          state.selectCustomDevice()
+        } else {
+          state.devices.firstOrNull { it.category == category }?.let(state::selectDevice)
+        }
+      }
+    }
   }
 }
 
 @Composable
-private fun Divider() = HorizontalDivider(color = Color.White.copy(alpha = 0.12f))
+private fun DeviceRow(state: DioramaState) {
+  if (state.isCustomSelected) {
+    CustomDeviceEditor(state)
+    return
+  }
+
+  val group = state.devices.filter { it.category == state.device.category }
+  Row(
+    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+    horizontalArrangement = Arrangement.spacedBy(6.dp),
+  ) {
+    group.forEach { spec ->
+      Chip(label = spec.name, selected = spec.id == state.device.id) { state.selectDevice(spec) }
+    }
+  }
+}
+
+/**
+ * Both coordinate spaces at once, in mono. dp is what the app lays out in and px is what it renders
+ * into, and the gap between them is exactly what a wrong dpi hides: a tablet reported at 159dpi
+ * instead of 240 still looks plausible in dp and quietly loads the wrong drawable bucket.
+ */
+@Composable
+private fun SpecReadout(state: DioramaState) {
+  val spec = state.device
+  val size = spec.sizeFor(state.orientation)
+  val widthDp = size.width.value.roundToInt()
+  val heightDp = size.height.value.roundToInt()
+  val widthPx = (size.width.value * spec.density).roundToInt()
+  val heightPx = (size.height.value * spec.density).roundToInt()
+
+  Row(
+    Modifier
+      .fillMaxWidth()
+      .clip(RoundedCornerShape(8.dp))
+      .background(Raised)
+      .padding(horizontal = 12.dp, vertical = 10.dp),
+    horizontalArrangement = Arrangement.spacedBy(14.dp),
+  ) {
+    Metric("$widthDp × $heightDp", "dp")
+    Metric("$widthPx × $heightPx", "px")
+    Metric("${spec.dpi}", "dpi")
+  }
+}
 
 @Composable
-private fun SectionTitle(text: String) {
+private fun Metric(value: String, unit: String) {
+  Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+    Text(
+      value,
+      fontFamily = FontFamily.Monospace,
+      fontSize = 13.sp,
+      fontWeight = FontWeight.Medium,
+      color = Signal,
+    )
+    Text(unit, fontFamily = FontFamily.Monospace, fontSize = 10.sp, color = Muted)
+  }
+}
+
+@Composable
+private fun CustomDeviceEditor(state: DioramaState) {
+  val size = state.customDevice.screenSize
+
+  Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    SliderRow(
+      label = "Width",
+      value = "${size.width.value.roundToInt()} dp",
+      current = size.width.value,
+      range = CustomDevice.WidthRange.start.value..CustomDevice.WidthRange.endInclusive.value,
+    ) { state.updateCustomDevice(width = it.roundToInt().dp) }
+
+    SliderRow(
+      label = "Height",
+      value = "${size.height.value.roundToInt()} dp",
+      current = size.height.value,
+      range = CustomDevice.HeightRange.start.value..CustomDevice.HeightRange.endInclusive.value,
+    ) { state.updateCustomDevice(height = it.roundToInt().dp) }
+
+    // Stepped through the real DisplayMetrics buckets: a continuous slider would offer 271dpi, which
+    // no device reports and Android would snap away anyway.
+    val densities = CustomDevice.Densities
+    val index = densities.indexOf(state.customDevice.dpi).coerceAtLeast(0)
+    SliderRow(
+      label = "Density",
+      value = "${state.customDevice.dpi} dpi",
+      current = index.toFloat(),
+      range = 0f..(densities.lastIndex).toFloat(),
+      steps = densities.size - 2,
+    ) { state.updateCustomDevice(dpi = densities[it.roundToInt().coerceIn(densities.indices)]) }
+  }
+}
+
+@Composable
+private fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
   Text(
-    text.uppercase(),
-    style = MaterialTheme.typography.labelSmall,
-    color = Color.White.copy(alpha = 0.5f),
+    label,
+    style = MaterialTheme.typography.labelLarge,
+    color = if (selected) Signal else Ink,
+    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+    modifier = Modifier
+      .clip(RoundedCornerShape(8.dp))
+      .background(if (selected) Signal.copy(alpha = 0.16f) else Raised)
+      .clickable(onClick = onClick)
+      .padding(horizontal = 12.dp, vertical = 8.dp),
   )
 }
 
 @Composable
-private fun DeviceRow(spec: DeviceSpec, selected: Boolean, onClick: () -> Unit) {
-  val size = spec.screenSize
-  Column(
-    Modifier
-      .fillMaxWidth()
-      .clickable(onClick = onClick)
-      .padding(vertical = 6.dp)
-  ) {
-    Text(
-      spec.name,
-      style = MaterialTheme.typography.bodyMedium,
-      color = if (selected) Color(0xFF7AA2F7) else Color.White,
-      fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-    )
-    Text(
-      "${size.width.value.toInt()} x ${size.height.value.toInt()} dp  ·  ${spec.dpi} dpi",
-      style = MaterialTheme.typography.labelSmall,
-      color = Color.White.copy(alpha = 0.5f),
+private fun Divider() = HorizontalDivider(color = Line)
+
+@Composable
+private fun Label(text: String) {
+  Text(
+    text.uppercase(),
+    style = MaterialTheme.typography.labelSmall,
+    color = Muted,
+    letterSpacing = 1.sp,
+  )
+}
+
+@Composable
+private fun SliderRow(
+  label: String,
+  value: String,
+  current: Float,
+  range: ClosedFloatingPointRange<Float>,
+  steps: Int = 0,
+  onChange: (Float) -> Unit,
+) {
+  Column {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+      Text(label, style = MaterialTheme.typography.bodySmall, color = Ink)
+      Text(value, fontFamily = FontFamily.Monospace, fontSize = 12.sp, color = Signal)
+    }
+    Slider(
+      value = current,
+      onValueChange = onChange,
+      valueRange = range,
+      steps = steps,
+      colors = SliderDefaults.colors(
+        thumbColor = Signal,
+        activeTrackColor = Signal,
+        inactiveTrackColor = Raised,
+        activeTickColor = Color.Transparent,
+        inactiveTickColor = Color.Transparent,
+      ),
     )
   }
 }
@@ -117,9 +282,19 @@ private fun ToggleRow(
     Text(
       label,
       style = MaterialTheme.typography.bodyMedium,
-      color = if (enabled) Color.White else Color.White.copy(alpha = 0.3f),
+      color = if (enabled) Ink else Ink.copy(alpha = 0.3f),
     )
-    Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+    Switch(
+      checked = checked,
+      onCheckedChange = onCheckedChange,
+      enabled = enabled,
+      colors = SwitchDefaults.colors(
+        checkedThumbColor = Color.White,
+        checkedTrackColor = Signal,
+        uncheckedTrackColor = Raised,
+        uncheckedBorderColor = Line,
+      ),
+    )
   }
 }
 
