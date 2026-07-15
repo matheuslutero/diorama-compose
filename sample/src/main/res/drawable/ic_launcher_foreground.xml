@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="1254"
+    android:viewportHeight="1254">
+
+    <!-- 0.66 + recentering keeps the logo inside the adaptive icon's 66/108 safe zone. -->
+    <group
+        android:scaleX="0.66"
+        android:scaleY="0.66"
+        android:translateX="184.1"
+        android:translateY="204.9">
+
+        <path
+            android:fillType="evenOdd"
+            android:pathData="M302,239 H692 C903,239 1040,402 1040,639 C1040,876 903,1040 692,1040 H302 V239 Z M510,451 V829 H662 C775,829 851,754 851,640 C851,526 775,451 662,451 H510 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="302"
+                    android:startY="239"
+                    android:endX="1018"
+                    android:endY="1040">
+                    <item android:offset="0" android:color="#FF2ED4E6" />
+                    <item android:offset="0.45" android:color="#FF1C95FF" />
+                    <item android:offset="1" android:color="#FFD336FF" />
+                </gradient>
+            </aapt:attr>
+        </path>
+
+        <path android:pathData="M302,239 L510,451 V239 H302 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="300"
+                    android:startY="240"
+                    android:endX="525"
+                    android:endY="440">
+                    <item android:offset="0" android:color="#FF58E8F0" />
+                    <item android:offset="1" android:color="#FF1FB6F5" />
+                </gradient>
+            </aapt:attr>
+        </path>
+
+        <path
+            android:fillAlpha="0.95"
+            android:pathData="M302,1040 L510,829 H602 L394,1040 H302 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="360"
+                    android:startY="1040"
+                    android:endX="560"
+                    android:endY="820">
+                    <item android:offset="0" android:color="#FF2C48FF" />
+                    <item android:offset="1" android:color="#FF1E2FE0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+    </group>
+</vector>
