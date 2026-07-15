@@ -28,3 +28,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "diorama"
+
+include(":diorama-frame")
