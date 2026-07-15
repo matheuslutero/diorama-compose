@@ -39,6 +39,10 @@ private val Muted = Color(0xFF8A8A99)
 private val Raised = Color(0xFF22222B)
 private val Line = Color.White.copy(alpha = 0.08f)
 
+// Raised is indistinguishable from PanelBackground as a slider track; the idle track needs its own,
+// visibly lighter tone.
+private val TrackIdle = Color.White.copy(alpha = 0.14f)
+
 /**
  * The font scales Android's own Settings offers, from the display sizes through the accessibility
  * range. A continuous slider reads 0.8558874x, which no user can produce and no bug report will ever
@@ -259,7 +263,7 @@ private fun SliderRow(
       colors = SliderDefaults.colors(
         thumbColor = Signal,
         activeTrackColor = Signal,
-        inactiveTrackColor = Raised,
+        inactiveTrackColor = TrackIdle,
         activeTickColor = Color.Transparent,
         inactiveTickColor = Color.Transparent,
       ),
@@ -288,11 +292,18 @@ private fun ToggleRow(
       checked = checked,
       onCheckedChange = onCheckedChange,
       enabled = enabled,
+      // The disabled slots must be pinned too: they otherwise resolve from the host app's
+      // MaterialTheme, which leaks a light-scheme switch into this dark panel.
       colors = SwitchDefaults.colors(
         checkedThumbColor = Color.White,
         checkedTrackColor = Signal,
         uncheckedTrackColor = Raised,
         uncheckedBorderColor = Line,
+        disabledCheckedThumbColor = Ink.copy(alpha = 0.4f),
+        disabledCheckedTrackColor = Signal.copy(alpha = 0.3f),
+        disabledUncheckedThumbColor = Muted.copy(alpha = 0.5f),
+        disabledUncheckedTrackColor = Raised,
+        disabledUncheckedBorderColor = Line,
       ),
     )
   }
