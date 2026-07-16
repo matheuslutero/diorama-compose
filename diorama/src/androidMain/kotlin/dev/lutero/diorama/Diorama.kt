@@ -7,6 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,12 +17,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.movableContentOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,6 +54,11 @@ internal val PanelBackground = Color(0xFF16161C)
  *
  * The panel also carries one runtime-editable device, so a size can be dialled in without a
  * rebuild. See [DioramaState.customDevice].
+ *
+ * Switching devices keeps the app's state, since the content sits at one call site inside the
+ * simulation. Toggling the simulation off moves the content to a different call site and remounts
+ * it: the two branches must not share a composition, or the app inherits the stage's consumed
+ * window insets and its own `safeDrawingPadding` collapses to zero.
  */
 @Composable
 fun Diorama(
@@ -61,18 +67,12 @@ fun Diorama(
   state: DioramaState = rememberDioramaState(devices),
   content: @Composable () -> Unit,
 ) {
-  val currentContent by rememberUpdatedState(content)
-
-  // movableContentOf keeps the app's composition (and so its state) alive across the simulated and
-  // unsimulated branches; without it every toggle remounts the app from scratch.
-  val app = remember { movableContentOf { currentContent() } }
-
   BoxWithConstraints(modifier.fillMaxSize().background(StageBackground)) {
     val drawerMaxHeight = maxHeight * 0.5f
 
     Column(Modifier.fillMaxSize()) {
       Box(Modifier.weight(1f).fillMaxWidth()) {
-        if (state.isEnabled) Stage(state, app) else app()
+        if (state.isEnabled) Stage(state, content) else content()
       }
 
       Surface(color = PanelBackground, contentColor = Color.White) {
@@ -92,10 +92,17 @@ fun Diorama(
 }
 
 @Composable
-private fun Stage(state: DioramaState, app: @Composable () -> Unit) {
+private fun Stage(state: DioramaState, content: @Composable () -> Unit) {
   // no navigationBarsPadding here: the dock below owns it
   Box(
-    Modifier.fillMaxSize().statusBarsPadding().displayCutoutPadding().padding(16.dp),
+    Modifier
+      .fillMaxSize()
+      .statusBarsPadding()
+      .displayCutoutPadding()
+      // The virtual device has no host system bars, so the app inside sees none of the host's
+      // remaining insets either.
+      .consumeWindowInsets(WindowInsets.systemBars.union(WindowInsets.displayCutout))
+      .padding(16.dp),
     contentAlignment = Alignment.Center,
   ) {
     DeviceOverride(
@@ -109,7 +116,7 @@ private fun Stage(state: DioramaState, app: @Composable () -> Unit) {
 
       // bezel and screen scale as one unit; DeviceFrame pads the bezel back off
       DeviceViewport(DpSize(screen.width + bezel * 2, screen.height + bezel * 2)) {
-        DeviceFrame(bezel) { app() }
+        DeviceFrame(bezel) { content() }
       }
     }
   }

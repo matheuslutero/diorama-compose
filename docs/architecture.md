@@ -33,7 +33,7 @@ The first is Android-specific. The second is pure Compose. That line is the modu
 ## The composition tree
 
 ```
-Diorama                          entry point; owns movableContentOf
+Diorama                          entry point
 └─ Column
    ├─ Box (weight 1)             shrinks when the drawer opens
    │  └─ Stage                   statusBarsPadding + displayCutoutPadding
@@ -113,16 +113,15 @@ from the spec, never from a fit ratio.
 `currentWindowAdaptiveInfo()` follow the simulation, because it derives the window size from
 `LocalWindowInfo.containerSize` divided by `LocalDensity`.
 
-### `movableContentOf`: the app survives the toggle
+### The app survives a device switch, not the simulation toggle
 
-```kotlin
-val currentContent by rememberUpdatedState(content)
-val app = remember { movableContentOf { currentContent() } }
-```
-
-This preserves the app's composition, and so all of its state, as it moves between the simulated and
-unsimulated branches and across device switches. device_preview needs a `GlobalKey` for the same
-reason. Without it, every toggle remounts the app from scratch.
+The content sits at one call site inside the simulation, so switching devices recomposes around it
+and keeps its state. Toggling the simulation off moves the content to a different call site and
+remounts it. The two branches deliberately do not share a composition: `Stage` consumes the host's
+window insets, and a shared node would carry that consumed value into the unsimulated branch, where
+the app's own `safeDrawingPadding` would then collapse to zero. A `movableContentOf` bridge would
+preserve state across the toggle too, but there is no way to reset the inherited inset consumption on
+the moved node, so state across the toggle is traded for correct insets.
 
 ### `DioramaState`: survives rotation
 
