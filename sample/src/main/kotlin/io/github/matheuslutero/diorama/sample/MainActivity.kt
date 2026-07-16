@@ -71,32 +71,32 @@ private val Places = listOf(
   Place(
     "Santorini", "Greece", "Island",
     "Whitewashed villages on the rim of a drowned volcano. The Oia sunset empties every terrace in town.",
-    "GMT+3", "Apr – Oct", Color(0xFF2193B0) to Color(0xFF0B2E6B),
+    "GMT+3", "Apr - Oct", Color(0xFF2193B0) to Color(0xFF0B2E6B),
   ),
   Place(
     "Kyoto", "Japan", "City",
     "Two thousand temples, one bamboo grove, and streets where geiko still hurry to work at dusk.",
-    "GMT+9", "Mar – May", Color(0xFFEE9CA7) to Color(0xFF8E2445),
+    "GMT+9", "Mar - May", Color(0xFFEE9CA7) to Color(0xFF8E2445),
   ),
   Place(
     "Machu Picchu", "Peru", "Trail",
     "The Inca citadel appears through the Sun Gate at dawn if you walk the last stretch of the trail.",
-    "GMT-5", "May – Sep", Color(0xFF11998E) to Color(0xFF2C3E50),
+    "GMT-5", "May - Sep", Color(0xFF11998E) to Color(0xFF2C3E50),
   ),
   Place(
     "Bora Bora", "French Polynesia", "Beach",
     "A lagoon three shades of blue around one green peak. Overwater bungalows invented themselves here.",
-    "GMT-10", "May – Oct", Color(0xFF43C6AC) to Color(0xFF191654),
+    "GMT-10", "May - Oct", Color(0xFF43C6AC) to Color(0xFF191654),
   ),
   Place(
     "Banff", "Canada", "Trail",
     "Glacier lakes the color of toothpaste and elk on the main street. June trails still cross snow.",
-    "GMT-7", "Jun – Sep", Color(0xFF56CCF2) to Color(0xFF2F80ED),
+    "GMT-7", "Jun - Sep", Color(0xFF56CCF2) to Color(0xFF2F80ED),
   ),
   Place(
     "Amalfi Coast", "Italy", "Beach",
     "Lemon groves and pastel towns bolted to sea cliffs, linked by a road with no straight meters.",
-    "GMT+1", "May – Sep", Color(0xFFFF512F) to Color(0xFFDD2476),
+    "GMT+1", "May - Sep", Color(0xFFFF512F) to Color(0xFFDD2476),
   ),
 )
 
