@@ -42,7 +42,7 @@ fun DeviceFrame(
       .fillMaxSize()
       .background(Color(0xFF15151A), RoundedCornerShape(bezel * 2.5f))
       .padding(bezel)
-      .clip(RoundedCornerShape(bezel * 1.5f))
+      .clip(RoundedCornerShape(bezel * 1.5f)),
   ) {
     content()
   }

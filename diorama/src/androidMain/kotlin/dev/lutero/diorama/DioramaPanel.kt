@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.lutero.diorama.frame.CustomDevice
 import dev.lutero.diorama.frame.DeviceCategory
-import dev.lutero.diorama.frame.DeviceSpec
 import dev.lutero.diorama.frame.Orientation
 import kotlin.math.roundToInt
 

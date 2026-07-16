@@ -101,7 +101,7 @@ private fun dioramaStateSaver(
         )
         val savedId = saved[2] as String
         selectDevice(
-          if (savedId == CustomDevice.Id) customDevice else byId[savedId] ?: initialDevice
+          if (savedId == CustomDevice.Id) customDevice else byId[savedId] ?: initialDevice,
         )
         if (Orientation.valueOf(saved[3] as String) == Orientation.Landscape) rotate()
         isEnabled = saved[0] as Boolean
