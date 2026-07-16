@@ -1,101 +1,48 @@
 # Publishing
 
-Diorama publishes `:diorama` and `:diorama-frame` to Maven Central through the
-[vanniktech maven-publish](https://github.com/vanniktech/gradle-maven-publish-plugin) plugin.
-`:sample` is never published.
-
-Coordinates come from `gradle.properties`:
+`:diorama` and `:diorama-frame` publish to Maven Central through the
+[vanniktech maven-publish](https://github.com/vanniktech/gradle-maven-publish-plugin) plugin;
+`:sample` is not published.
 
 ```
-io.github.matheuslutero:diorama:0.1.0
-io.github.matheuslutero:diorama-frame:0.1.0
+io.github.matheuslutero:diorama:<version>
+io.github.matheuslutero:diorama-frame:<version>
 ```
 
-## One-time setup
+## Cutting a release
 
-### 1. Namespace
+The version is the git tag, not a committed value (`VERSION_NAME` in `gradle.properties` is only a
+local default). To release:
 
-`io.github.matheuslutero` is verified on the [Central Portal](https://central.sonatype.com) through
-the GitHub account, so it needs no domain. Do not change the group id after the first release: a
-published coordinate is permanent, and moving it forces every consumer to update their dependency.
+1. Move the `Unreleased` entries in `CHANGELOG.md` under the new version.
+2. Tag and push:
 
-### 2. Central Portal token
+   ```bash
+   git tag 0.2.0 && git push origin 0.2.0
+   ```
 
-Create a user token at central.sonatype.com → Account → Generate User Token. Put it in
-`~/.gradle/gradle.properties` (never in the repo):
+`.github/workflows/release.yml` fires on the tag, takes the version from it, and uploads to the
+Central Portal. The upload waits for a manual release in the Portal; set `publishToMavenCentral(true)`
+in the module `build.gradle.kts` to release automatically (a Central release is permanent, so manual
+review is the safer default).
 
-```
-mavenCentralUsername=<token-username>
-mavenCentralPassword=<token-password>
-```
+## Required Actions secrets
 
-### 3. GPG signing key
+The workflow reads these repository secrets (Settings → Secrets and variables → Actions) and maps
+them to the env vars the publish plugin expects.
 
-Central requires every artifact to be signed.
+| Secret | What it is |
+|---|---|
+| `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD` | A Central Portal user token ([central.sonatype.com](https://central.sonatype.com) → Account → Generate User Token). |
+| `SIGNING_KEY`, `SIGNING_PASSWORD` | An armored GPG private key and its passphrase, with the public key on a keyserver. See the plugin's [signing docs](https://vanniktech.github.io/gradle-maven-publish-plugin/central/#in-memory-gpg-key). |
 
-```bash
-gpg --gen-key                                    # once
-gpg --armor --export-secret-keys <KEY_ID>        # copy the block
-```
-
-Add to `~/.gradle/gradle.properties`:
-
-```
-signingInMemoryKey=<the ascii-armored secret key, newlines as \n>
-signingInMemoryKeyPassword=<key passphrase>
-```
-
-Also publish the public key so Central can verify it:
-
-```bash
-gpg --keyserver keyserver.ubuntu.com --send-keys <KEY_ID>
-```
-
-## Release
-
-The version comes from the git tag, not from `gradle.properties`. `VERSION_NAME=0.1.0` there is only
-a local default; the release workflow overrides it from the tag through
-`ORG_GRADLE_PROJECT_VERSION_NAME`.
-
-### Through CI (the normal path)
-
-The credentials above live as GitHub Actions secrets, not in `~/.gradle`:
-
-```
-ORG_GRADLE_PROJECT_mavenCentralUsername
-ORG_GRADLE_PROJECT_mavenCentralPassword
-ORG_GRADLE_PROJECT_signingInMemoryKey
-ORG_GRADLE_PROJECT_signingInMemoryKeyPassword
-```
-
-Then move the `Unreleased` entries in `CHANGELOG.md` under the new version, and tag:
-
-```bash
-git tag 0.1.0 && git push origin 0.1.0
-```
-
-`.github/workflows/release.yml` fires on the tag, sets the version from it, and uploads to the
-Central Portal. The upload waits for a manual release in the Portal UI; switch the module config to
-`publishToMavenCentral(true)` to release automatically (a Central release cannot be undone, so manual
-review is the safer default for now).
-
-### Locally
-
-Configuration cache is on, so publishing needs it off:
-
-```bash
-./gradlew publishToMavenCentral --no-configuration-cache -PVERSION_NAME=0.1.0
-```
-
-A `-SNAPSHOT` version publishes to the snapshots repository with no signing or release step, useful
-for testing a consumer against an unreleased build.
+Central verifies the `io.github.matheuslutero` namespace through the GitHub account, so no domain is
+needed. Do not change the group id after the first release: a published coordinate is permanent.
 
 ## Consuming
 
 ```kotlin
-dependencies {
-  implementation("io.github.matheuslutero:diorama:0.1.0")
-}
+implementation("io.github.matheuslutero:diorama:<version>")
 ```
 
 `:diorama` pulls in `:diorama-frame` transitively.
