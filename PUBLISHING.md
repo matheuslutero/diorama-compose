@@ -11,20 +11,17 @@ io.github.matheuslutero:diorama-frame:<version>
 
 ## Cutting a release
 
-The version is the git tag, not a committed value (`VERSION_NAME` in `gradle.properties` is only a
-local default). To release:
+Releases are driven by [release-please](https://github.com/googleapis/release-please). It reads the
+Conventional Commits merged to `main` and keeps a release PR open that bumps `version.txt` and
+`CHANGELOG.md`. Merge that PR and the tag, the GitHub release, and the Maven Central publish all run
+automatically (`release-please.yml` calls the reusable `release.yml`).
 
-1. Move the `Unreleased` entries in `CHANGELOG.md` under the new version.
-2. Tag and push:
+Pushing a `MAJOR.MINOR.PATCH` tag by hand publishes the same way. That is how the first `0.1.0` is
+cut, and it also gives release-please its baseline for the next version.
 
-   ```bash
-   git tag 0.2.0 && git push origin 0.2.0
-   ```
-
-`.github/workflows/release.yml` fires on the tag, takes the version from it, and uploads to the
-Central Portal. The upload waits for a manual release in the Portal; set `publishToMavenCentral(true)`
-in the module `build.gradle.kts` to release automatically (a Central release is permanent, so manual
-review is the safer default).
+The upload waits for a manual release in the Central Portal; set `publishToMavenCentral(true)` in the
+module `build.gradle.kts` to release automatically (a Central release is permanent, so manual review
+is the safer default).
 
 ## Required Actions secrets
 
