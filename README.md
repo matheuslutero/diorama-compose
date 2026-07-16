@@ -3,6 +3,7 @@
   <h1>Diorama</h1>
   <p><b>Run your Compose app inside a simulated device and swap the hardware live. One real phone is enough.</b></p>
   <p>
+    <a href="https://central.sonatype.com/artifact/io.github.matheuslutero/diorama"><img src="https://img.shields.io/maven-central/v/io.github.matheuslutero/diorama?label=Maven%20Central&color=blue" alt="Maven Central" /></a>
     <img src="https://img.shields.io/badge/Android-3DDC84?logo=android&logoColor=white" alt="Android" />
     <img src="https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin" />
     <img src="https://img.shields.io/badge/Jetpack_Compose-4285F4?logo=jetpackcompose&logoColor=white" alt="Jetpack Compose" />
@@ -14,6 +15,17 @@
 
 A miniature, faithful model of a device holding your real, interactive app. Inspired by Flutter's
 [`device_preview`](https://pub.dev/packages/device_preview).
+
+## Install
+
+On Maven Central, Android only:
+
+```kotlin
+// build.gradle.kts
+dependencies {
+  implementation("io.github.matheuslutero:diorama:<version>")
+}
+```
 
 ## Quickstart
 
