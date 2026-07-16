@@ -90,7 +90,7 @@ Constraints are always in pixels, so `fitScale` compares like with like whatever
 
 ### `ConfigurationOverride`: six locals in lockstep
 
-Vendored from AOSP with attribution. All six must move together:
+All six must move together:
 
 `LocalContext` · `LocalConfiguration` · `LocalLayoutDirection` · `LocalDensity` ·
 `LocalFontFamilyResolver` · (`LocalProvidableLocaleList`, unreachable)
@@ -174,7 +174,8 @@ should become an explicit flag.
   Its author's own verdict, open since 2019: `WidgetsBinding.instance` is static, so the simulation
   can never be scoped to the wrapped app. Compose's CompositionLocals make that a non-problem, so
   Diorama starts above the ceiling he spent years trying to reach.
-- **DeviceConfigurationOverride** (`androidx.compose.ui:ui-test`). The engine, vendored here.
+- **DeviceConfigurationOverride** (`androidx.compose.ui:ui-test`). The same override idea, but
+  test-only (it drags in Espresso) and never wired to a runtime panel.
 - **Paparazzi** (`DeviceConfig`). The best-shaped device model in the ecosystem, Apache-2.0.
 - **KMPDevicePreview**. The only library with this shape. Dead since 2024, and its override layer is
   the half you would throw away: `LocalDensity` only, `fontScale` hardcoded to 1f, no

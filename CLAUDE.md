@@ -74,9 +74,6 @@ Two-space indent. Version catalog for every dependency, with no inline coordinat
 constraint the code cannot show (an API floor, a silent failure mode, a reason an obvious approach is
 wrong), not what the next line does.
 
-`ConfigurationOverride.kt` is derived from AOSP and carries its Apache-2.0 attribution. Keep the
-header if you touch it.
-
 ## Toolchain quirks worth not rediscovering
 
 - AGP 9 bans `com.android.library` alongside KMP. Library modules use

@@ -1,12 +1,3 @@
-/*
- * Derived from androidx.compose.ui.test.DeviceConfigurationOverride.
- * Copyright 2023 The Android Open Source Project. Licensed under the Apache License, Version 2.0.
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Vendored rather than depended on. Upstream ships this in androidx.compose.ui:ui-test, which
- * pulls Espresso, the test runner and Hamcrest into any build that takes it, and Google documents
- * it as a test-only API. Vendoring also allows the recomposition fix below.
- */
 package dev.lutero.diorama
 
 import android.content.res.Configuration
