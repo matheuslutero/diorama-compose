@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Code conventions
+        run: ./gradlew ktlintCheck
+
+      # iOS is a compile target of :diorama-frame but only builds on macOS; it is validated by the
+      # release workflow. CI stays on Linux and covers the Android and JVM outputs.
+      - name: Build
+        run: ./gradlew :sample:assembleDebug :diorama-frame:jvmJar
+
+      - name: Test
+        run: ./gradlew :diorama-frame:jvmTest
