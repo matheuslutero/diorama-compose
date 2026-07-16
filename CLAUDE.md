@@ -38,17 +38,6 @@ two-pane detail appears on wide screens, the insets change with the simulation o
 is worth making in a commit or a doc, measure it on a device first, and measure it again rather than
 trusting an earlier run.
 
-## Do not invent device metrics
-
-The catalog is transcribed from the Android SDK's own device XMLs (`sdklib`): every entry records its
-upstream id and the pixels and density it came from. The open `TODO(catalog)` is to read them from
-the `com.android.tools:sdklib` artifact at build time instead of transcribing by hand.
-
-Do not fill gaps by guessing, and do not port device_preview's catalog: its iPhone 12 carries an
-iPad Pro screen size, and several entries have half the correct pixel ratio. If a number cannot be
-sourced, leave the field out and say so. A preview that looks authoritative and lies is worse than
-one that is visibly incomplete.
-
 ## Invariants
 
 - **Constrain, then scale.** The app is measured at `Constraints.fixed(devicePx)` and only its
