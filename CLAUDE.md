@@ -14,8 +14,8 @@ Read [docs/architecture.md](docs/architecture.md) before changing anything struc
 | Gradle | 9.6.1 (wrapper) |
 | Compose Multiplatform | 1.11.1 |
 | compileSdk / minSdk | 36 / 24 |
-| Tests | none yet |
-| Linter / formatter | none configured |
+| Tests | kotlin-test, in `diorama-frame` commonTest |
+| Linter / formatter | ktlint |
 
 ## Build and run
 
