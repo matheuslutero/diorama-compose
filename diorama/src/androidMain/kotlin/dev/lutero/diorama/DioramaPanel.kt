@@ -155,8 +155,8 @@ private fun SpecReadout(state: DioramaState, modifier: Modifier = Modifier) {
       .padding(horizontal = 12.dp, vertical = 10.dp),
     horizontalArrangement = Arrangement.spacedBy(14.dp),
   ) {
-    Metric("$widthDp × $heightDp", "dp")
-    Metric("$widthPx × $heightPx", "px")
+    Metric("$widthDp x $heightDp", "dp")
+    Metric("$widthPx x $heightPx", "px")
     Metric("${spec.dpi}", "dpi")
   }
 }
