@@ -3,6 +3,12 @@ plugins {
   alias(libs.plugins.android.kmp.library)
   alias(libs.plugins.compose.multiplatform)
   alias(libs.plugins.compose.compiler)
+  alias(libs.plugins.maven.publish)
+}
+
+mavenPublishing {
+  publishToMavenCentral()
+  signAllPublications()
 }
 
 // Nothing here may touch android.content.Context; this module stays portable.
