@@ -7,18 +7,17 @@ Diorama publishes `:diorama` and `:diorama-frame` to Maven Central through the
 Coordinates come from `gradle.properties`:
 
 ```
-dev.lutero:diorama:0.1.0
-dev.lutero:diorama-frame:0.1.0
+io.github.matheuslutero:diorama:0.1.0
+io.github.matheuslutero:diorama-frame:0.1.0
 ```
 
 ## One-time setup
 
 ### 1. Namespace
 
-`dev.lutero` requires proving you own `lutero.dev` on the
-[Central Portal](https://central.sonatype.com) (a DNS TXT record). If you do not own that domain,
-change `GROUP` in `gradle.properties` to `io.github.matheuslutero`, which the Portal verifies through
-your GitHub account with no domain.
+`io.github.matheuslutero` is verified on the [Central Portal](https://central.sonatype.com) through
+the GitHub account, so it needs no domain. Do not change the group id after the first release: a
+published coordinate is permanent, and moving it forces every consumer to update their dependency.
 
 ### 2. Central Portal token
 
@@ -95,7 +94,7 @@ for testing a consumer against an unreleased build.
 
 ```kotlin
 dependencies {
-  implementation("dev.lutero:diorama:0.1.0")
+  implementation("io.github.matheuslutero:diorama:0.1.0")
 }
 ```
 

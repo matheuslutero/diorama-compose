@@ -14,7 +14,7 @@ mavenPublishing {
 // Android-only: the override engine is built on Configuration/ContextThemeWrapper.
 kotlin {
   androidLibrary {
-    namespace = "dev.lutero.diorama"
+    namespace = "io.github.matheuslutero.diorama"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     minSdk = libs.versions.android.minSdk.get().toInt()
   }

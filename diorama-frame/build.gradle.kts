@@ -14,7 +14,7 @@ mavenPublishing {
 // Nothing here may touch android.content.Context; this module stays portable.
 kotlin {
   androidLibrary {
-    namespace = "dev.lutero.diorama.frame"
+    namespace = "io.github.matheuslutero.diorama.frame"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     minSdk = libs.versions.android.minSdk.get().toInt()
   }

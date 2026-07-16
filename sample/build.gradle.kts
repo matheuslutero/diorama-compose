@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-  namespace = "dev.lutero.diorama.sample"
+  namespace = "io.github.matheuslutero.diorama.sample"
   compileSdk = libs.versions.android.compileSdk.get().toInt()
 
   defaultConfig {
-    applicationId = "dev.lutero.diorama.sample"
+    applicationId = "io.github.matheuslutero.diorama.sample"
     minSdk = 26
     targetSdk = libs.versions.android.targetSdk.get().toInt()
     versionCode = 1

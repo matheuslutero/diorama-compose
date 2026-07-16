@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/art.png" width="120" alt="Diorama logo" />
+  <img src="docs/art.svg" width="120" alt="Diorama logo" />
   <h1>Diorama</h1>
   <p><b>Run your Compose app inside a simulated device and swap the hardware live. One real phone is enough.</b></p>
   <p>

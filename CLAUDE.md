@@ -22,7 +22,7 @@ Read [docs/architecture.md](docs/architecture.md) before changing anything struc
 ```bash
 ./gradlew :sample:assembleDebug     # build
 ./gradlew :sample:installDebug      # build + install
-adb shell am start -n dev.lutero.diorama.sample/.MainActivity
+adb shell am start -n io.github.matheuslutero.diorama.sample/.MainActivity
 ```
 
 ## Verify on a device, not in the compiler

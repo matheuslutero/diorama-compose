@@ -1,0 +1,102 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1254"
+  height="1254"
+  viewBox="0 0 1254 1254"
+  fill="none"
+>
+  <defs>
+    <linearGradient
+      id="backgroundGradient"
+      x1="200"
+      y1="120"
+      x2="1080"
+      y2="1130"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop offset="0" stop-color="#03124A" />
+      <stop offset="0.55" stop-color="#031147" />
+      <stop offset="1" stop-color="#060B33" />
+    </linearGradient>
+
+    <linearGradient
+      id="logoGradient"
+      x1="302"
+      y1="239"
+      x2="1018"
+      y2="1040"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop offset="0" stop-color="#2ED4E6" />
+      <stop offset="0.45" stop-color="#1C95FF" />
+      <stop offset="1" stop-color="#D336FF" />
+    </linearGradient>
+
+    <linearGradient
+      id="topFacetGradient"
+      x1="300"
+      y1="240"
+      x2="525"
+      y2="440"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop offset="0" stop-color="#58E8F0" />
+      <stop offset="1" stop-color="#1FB6F5" />
+    </linearGradient>
+
+    <linearGradient
+      id="bottomFacetGradient"
+      x1="360"
+      y1="1040"
+      x2="560"
+      y2="820"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop offset="0" stop-color="#2C48FF" />
+      <stop offset="1" stop-color="#1E2FE0" />
+    </linearGradient>
+  </defs>
+
+  <rect
+    x="27"
+    y="27"
+    width="1200"
+    height="1200"
+    rx="180"
+    fill="url(#backgroundGradient)"
+  />
+
+  <path
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="
+      M302 239
+      H692
+      C903 239 1040 402 1040 639
+      C1040 876 903 1040 692 1040
+      H302
+      V239
+      Z
+
+      M510 451
+      V829
+      H662
+      C775 829 851 754 851 640
+      C851 526 775 451 662 451
+      H510
+      Z
+    "
+    fill="url(#logoGradient)"
+  />
+
+  <path
+    d="M302 239L510 451V239H302Z"
+    fill="url(#topFacetGradient)"
+  />
+
+  <path
+    d="M302 1040L510 829H602L394 1040H302Z"
+    fill="url(#bottomFacetGradient)"
+    opacity="0.95"
+  />
+</svg>
