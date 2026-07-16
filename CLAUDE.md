@@ -59,6 +59,11 @@ trusting an earlier run.
   portable.
 - **The bar stays visible when the simulation is off.** It is the only way back in.
 
+## Pull requests
+
+Every PR uses `.github/pull_request_template.md` and fills both sections; it is mandatory, not
+optional. The title follows Conventional Commits (a CI check enforces it).
+
 ## Code style
 
 Two-space indent. Version catalog for every dependency, with no inline coordinates. Comments explain a
