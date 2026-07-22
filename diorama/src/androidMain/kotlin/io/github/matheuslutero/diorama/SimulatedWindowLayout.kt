@@ -43,7 +43,11 @@ internal class SimulatedWindowLayout(
   private val window: Window? = null,
   private val contentGravity: Int = Gravity.CENTER,
   private val dimAmount: Float = 0f,
-  /** What the window asked for, which decides the preferred width below. Compose asks again. */
+  /**
+   * What the window last asked for, which decides the preferred width below. Seeded from before the
+   * window was filled, because filling it overwrites the request, and re-read every measure because
+   * Compose asks again from a SideEffect of its own.
+   */
   private var requestedWidth: Int = ViewGroup.LayoutParams.WRAP_CONTENT,
 ) : ViewGroup(context) {
   private val locationOnScreen = IntArray(2)
@@ -82,7 +86,7 @@ internal class SimulatedWindowLayout(
       return
     }
 
-    if (window != null) window.attributes.width.let { if (it < 0) requestedWidth = it }
+    if (window != null) requestedWidth = window.attributes.width
     measureContent(child)
 
     if (window != null) {
