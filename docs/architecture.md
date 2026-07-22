@@ -169,6 +169,20 @@ drawn over it, so a full-screen destination squares off the device's corners wit
 is drawn there too: `FLAG_DIM_BEHIND` is a full-screen layer behind the window, so the platform's own
 would grey out the host and the panel with it.
 
+**The host's insets stop at the window.** `Stage` consumes the host's system bars and display cutout
+for the main content, because the virtual device has none. A window filling the host's frame is
+handed them in full, so without the same consumption a sheet takes the host's status bar as padding
+and grows to meet it. The IME is deliberately left alone, for the reason `Stage` leaves it alone: the
+keyboard is the host's either way, and content that moves out of its way has to know it is there.
+
+**A dialog that wraps its content is measured the way ViewRootImpl would have.**
+`measureHierarchy` tries `config_prefDialogWidth` first — 320dp on a phone — and only widens if the
+content comes back `MEASURED_STATE_TOO_SMALL`. That is the whole reason an AlertDialog has margins
+rather than running edge to edge, and pinning the window took the pass away. The same three steps
+run against the simulated screen instead. Measured on a phone at 320dpi: the real device hands the
+dialog's text 544px, and so does this. Without it the same text got 624px and the dialog ran the
+full width of the device.
+
 Dismiss-on-tap-outside is Compose's own, and scaling invalidates it: `DialogWrapper.onTouchEvent`
 compares the event against the content's untransformed bounds, and `Dialog.cancel()` is overridden
 to do nothing, so the platform's route is a dead end. The layout answers the comparison itself and

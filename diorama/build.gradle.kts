@@ -20,6 +20,9 @@ kotlin {
   }
 
   sourceSets {
+    androidMain.dependencies {
+      implementation(libs.androidx.core)
+    }
     commonMain.dependencies {
       api(project(":diorama-frame"))
       implementation(compose.runtime)
