@@ -13,8 +13,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
-import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import kotlin.math.roundToInt
 
@@ -59,18 +59,24 @@ internal class SimulatedWindowLayout(
   }
 
   init {
-    // The same insets Stage consumes for the main content: the virtual device has no system bars,
-    // and a window filling the host's frame is handed the host's in full. Not the IME — the
-    // keyboard is the host's either way, and content moving out of its way has to know it is there.
+    // What Stage consumes for the main content: a window filling the host's frame is handed the
+    // host's insets in full, and the device inside has none of that hardware.
+    //
+    // Both paths, because the keyboard travels down two. Compose reads the animated ones from a
+    // WindowInsetsAnimation callback, which is dispatched to a subtree on its own and does not pass
+    // through what a parent consumed: without stopping that as well, a dialog is handed the host's
+    // IME and pads itself out of the way of a keyboard that is not on its screen.
     if (window != null) {
-      ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
-        WindowInsetsCompat.Builder(insets)
-          .setInsets(
-            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
-            Insets.NONE,
-          )
-          .build()
-      }
+      ViewCompat.setOnApplyWindowInsetsListener(this) { _, _ -> WindowInsetsCompat.CONSUMED }
+      ViewCompat.setWindowInsetsAnimationCallback(
+        this,
+        object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_STOP) {
+          override fun onProgress(
+            insets: WindowInsetsCompat,
+            runningAnimations: MutableList<WindowInsetsAnimationCompat>,
+          ): WindowInsetsCompat = insets
+        },
+      )
     }
   }
 

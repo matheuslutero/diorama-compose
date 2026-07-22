@@ -169,11 +169,17 @@ drawn over it, so a full-screen destination squares off the device's corners wit
 is drawn there too: `FLAG_DIM_BEHIND` is a full-screen layer behind the window, so the platform's own
 would grey out the host and the panel with it.
 
-**The host's insets stop at the window.** `Stage` consumes the host's system bars and display cutout
-for the main content, because the virtual device has none. A window filling the host's frame is
-handed them in full, so without the same consumption a sheet takes the host's status bar as padding
-and grows to meet it. The IME is deliberately left alone, for the reason `Stage` leaves it alone: the
-keyboard is the host's either way, and content that moves out of its way has to know it is there.
+**The host's insets stop at the window, keyboard included.** `Stage` consumes the host's system bars,
+display cutout and IME for the main content, because the virtual device has none of that hardware and
+the host's keyboard covers the host's screen rather than the device's. A window filling the host's
+frame is handed all of it, so without the same consumption a sheet takes the host's status bar as
+padding and grows to meet it.
+
+A window has to block both paths the keyboard travels. `WindowInsetsCompat.CONSUMED` from an
+`OnApplyWindowInsetsListener` stops the ordinary dispatch, but Compose reads the animated IME from a
+`WindowInsetsAnimation` callback, which is dispatched to a subtree on its own and does not pass
+through what a parent consumed. A `Callback(DISPATCH_MODE_STOP)` is what stops that one. Measured
+with a text field inside a dialog: 519px of IME reached it through the animation callback alone.
 
 **A dialog that wraps its content is measured the way ViewRootImpl would have.**
 `measureHierarchy` tries `config_prefDialogWidth` first — 320dp on a phone — and only widens if the

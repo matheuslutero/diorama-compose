@@ -35,6 +35,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -172,6 +173,17 @@ private fun Catalog(
     }
 
     Spacer(Modifier.height(16.dp))
+    // The keyboard is the host's: opening it must not move anything inside the device.
+    var note by remember { mutableStateOf("") }
+    TextField(
+      value = note,
+      onValueChange = { note = it },
+      label = { Text("Note") },
+      singleLine = true,
+      modifier = Modifier.fillMaxWidth(),
+    )
+
+    Spacer(Modifier.height(16.dp))
     Overlays()
 
     Spacer(Modifier.height(16.dp))
@@ -257,7 +269,12 @@ private fun Overlays() {
     AlertDialog(
       onDismissRequest = { dialog = false },
       title = { Text("Leave for Kyoto?") },
-      text = { Text("This dialog belongs inside the simulated device, at the device's own width.") },
+      text = {
+        Column {
+          Text("This dialog belongs inside the simulated device, at the device's own width.")
+          TextField(value = "", onValueChange = {}, label = { Text("In dialog") })
+        }
+      },
       confirmButton = { TextButton(onClick = { dialog = false }) { Text("Book") } },
       dismissButton = { TextButton(onClick = { dialog = false }) { Text("Cancel") } },
     )

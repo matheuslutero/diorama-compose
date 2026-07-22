@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -103,9 +104,12 @@ private fun Stage(state: DioramaState, content: @Composable () -> Unit) {
       .fillMaxSize()
       .statusBarsPadding()
       .displayCutoutPadding()
-      // The virtual device has no host system bars, so the app inside sees none of the host's
-      // remaining insets either.
-      .consumeWindowInsets(WindowInsets.systemBars.union(WindowInsets.displayCutout))
+      // The app inside sees none of the host's insets, the keyboard's included: the host's IME
+      // covers the host's screen, not the device's, and its height in the device's own dp is a
+      // number no device would report.
+      .consumeWindowInsets(
+        WindowInsets.systemBars.union(WindowInsets.displayCutout).union(WindowInsets.ime),
+      )
       .padding(16.dp),
     contentAlignment = Alignment.Center,
   ) {
