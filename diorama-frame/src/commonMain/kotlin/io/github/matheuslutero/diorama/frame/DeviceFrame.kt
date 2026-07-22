@@ -33,16 +33,19 @@ fun DeviceFrame(
   modifier: Modifier = Modifier,
   content: @Composable () -> Unit,
 ) {
-  if (bezel <= 0.dp) {
-    Box(modifier.fillMaxSize()) { content() }
-    return
-  }
   Box(
     modifier
       .fillMaxSize()
-      .background(Color(0xFF15151A), RoundedCornerShape(bezel * 2.5f))
-      .padding(bezel)
-      .clip(RoundedCornerShape(bezel * 1.5f)),
+      .then(
+        if (bezel > 0.dp) {
+          Modifier
+            .background(Color(0xFF15151A), RoundedCornerShape(bezel * 2.5f))
+            .padding(bezel)
+            .clip(RoundedCornerShape(bezel * 1.5f))
+        } else {
+          Modifier
+        },
+      ),
   ) {
     content()
   }
