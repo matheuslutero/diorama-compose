@@ -179,10 +179,10 @@ private class SimulatedWindowManager(
   }
 
   private fun addView(view: View, params: ViewGroup.LayoutParams) {
-    if (!geometry.isReady) {
-      delegate.addView(view, params)
-      return
-    }
+    // Wrapped even before the geometry is known — a menu expanded on the first composition shows
+    // before the stage has been laid out once. The layout passes its content through until the
+    // geometry arrives, where adding the view unwrapped would leave it outside the simulation for
+    // as long as it lives.
     val host = SimulatedWindowLayout(view.context, geometry)
     host.addView(view, ViewGroup.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
     hosts[view] = host
