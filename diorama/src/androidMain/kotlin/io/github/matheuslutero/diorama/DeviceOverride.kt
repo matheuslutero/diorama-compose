@@ -28,6 +28,7 @@ internal fun DeviceOverride(
   orientation: Orientation,
   fontScale: Float,
   darkMode: Boolean,
+  geometry: SimulatedWindowGeometry,
   content: @Composable () -> Unit,
 ) {
   val base = LocalConfiguration.current
@@ -54,7 +55,7 @@ internal fun DeviceOverride(
     }
   }
 
-  OverriddenConfiguration(configuration) {
+  OverriddenConfiguration(configuration, geometry) {
     WindowInfoOverride(size, content)
   }
 }

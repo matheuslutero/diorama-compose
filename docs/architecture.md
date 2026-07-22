@@ -33,17 +33,18 @@ The first is Android-specific. The second is pure Compose. That line is the modu
 ## The composition tree
 
 ```
-Diorama                          entry point
+Diorama                             entry point
 └─ Column
-   ├─ Box (weight 1)             shrinks when the drawer opens
-   │  └─ Stage                   statusBarsPadding + displayCutoutPadding
-   │     └─ DeviceOverride       Context, Configuration, density, layoutDirection, WindowInfo
-   │        └─ DeviceViewport    Constraints.fixed(devicePx) → placeWithLayer(scale)
-   │           └─ DeviceFrame    bezel, in device dp, inside the scaled layer
-   │              └─ app()
-   └─ Surface                    the dock; navigationBarsPadding
-      ├─ DioramaBar              always present
-      └─ DioramaPanel            AnimatedVisibility, capped at half the height
+   ├─ Box (weight 1)                shrinks when the drawer opens
+   │  └─ Stage                      statusBarsPadding + displayCutoutPadding
+   │     └─ DeviceOverride          Context, Configuration, density, layoutDirection, WindowInfo
+   │        └─ SimulatedWindows     LocalView; reports the screen's rect and scale
+   │           └─ DeviceViewport    Constraints.fixed(devicePx) → placeWithLayer(scale)
+   │              └─ DeviceFrame    bezel, in device dp, inside the scaled layer
+   │                 └─ app()
+   └─ Surface                       the dock; navigationBarsPadding
+      ├─ DioramaBar                 always present
+      └─ DioramaPanel               AnimatedVisibility, capped at half the height
 ```
 
 Three things about that tree are deliberate.
@@ -113,6 +114,83 @@ from the spec, never from a fit ratio.
 `currentWindowAdaptiveInfo()` follow the simulation, because it derives the window size from
 `LocalWindowInfo.containerSize` divided by `LocalDensity`.
 
+### The windows the app opens
+
+A dialog, a bottom sheet and a dropdown menu are not in the composition. Each is a separate Android
+window, anchored to the display, so none of them passed through `DeviceViewport` and none of them
+was in the simulation at all: a dialog opened at the host's density, at the host's size, centred on
+the physical screen, dimming the panel with it.
+
+Everything hangs off one fact. `Popup` and `Dialog` both capture `LocalView.current` and then reach
+for **its Context** — not the composition's. Overriding `LocalContext` reaches neither, which is why
+a dialog inherited the host's Configuration even though the app around it did not. So the simulation
+hands the app a View of its own: a zero-sized `FrameLayout` built from the overridden Context. It
+must be a real `ViewGroup`, because ripple hosts itself in `LocalView`, and it must really be
+attached, because a window needs a live token to be shown.
+
+That View is the seam, and it has two sides:
+
+| | |
+|---|---|
+| `Popup` | takes the **WindowManager** from that Context and adds itself. `SimulatedWindowManager` wraps whatever is added. |
+| `Dialog` | builds its PhoneWindow from that Context, and the window inflates its decor through the **LayoutInflater** it finds there. That is the earliest moment a dialog is reachable from outside. |
+
+The inflater hook waits for the decor's content parent to receive the one child that implements
+`DialogWindowProvider` — public API, and the only handle on the Window — and puts a
+`SimulatedWindowLayout` between the two. Re-parenting is free at that point: the decor is still
+detached, so `AbstractComposeView` has not created its composition yet.
+
+Four things about that layout are load-bearing.
+
+**It is a ViewGroup, not a transform on the window's root.** ViewRootImpl hands the root view raw
+window coordinates and nothing above it inverts anything, so a scale set there moves the pixels and
+leaves the touch targets behind — the same failure `placeWithLayer` avoids in the composition.
+`ViewGroup.dispatchTouchEvent` inverts a child's matrix, so one level of nesting is what makes the
+scale real.
+
+**The window is pinned to the simulated screen's rectangle, by correction rather than prediction.**
+`WindowManager.LayoutParams` offsets are measured from a parent frame whose bounds depend on the
+window's flags and the host's insets, so the layout reads back where it actually landed and aims at
+an absolute target. Nudging by the error each pass instead keeps nudging while the previous nudge is
+in flight, and the window walks off screen. It runs from a pre-draw listener, because moving a
+window does not lay its content out again — a correction applied from `onLayout` is the last one
+that ever runs.
+
+**The scrim is drawn by the layout, not by the platform.** `FLAG_DIM_BEHIND` is a full-screen layer
+behind the window, so it greys out the host and the panel with it. Cleared, and redrawn inside the
+device. With `drawRect`, not `drawColor`: a floating window's surface is inflated to hold its
+elevation shadow and `drawColor` fills the clip, so the scrim spilled past the screen by the size of
+the shadow.
+
+**A dialog that wraps its content is measured the way ViewRootImpl would have.**
+`measureHierarchy` tries `config_prefDialogWidth` first — 320dp on a phone — and only widens if the
+content comes back `MEASURED_STATE_TOO_SMALL`. That is the whole reason an AlertDialog has margins
+rather than running edge to edge, and pinning the window took the pass away. The same three steps
+run against the simulated screen instead. Measured on a phone at 320dpi: the real device hands the
+dialog's text 544px, and so does this. Without it the same text got 624px and the dialog ran the
+full width of the device.
+
+Dismiss-on-tap-outside is Compose's own, and scaling invalidates it: `DialogWrapper.onTouchEvent`
+compares the event against the content's untransformed bounds, and `Dialog.cancel()` is overridden
+to do nothing, so the platform's route is a dead end. The layout answers the comparison itself and
+forwards a copy that lands nowhere near the content, which leaves the decision — and
+`dismissOnClickOutside` with it — where it belongs.
+
+The cost is a contract the app has to know about: **`LocalView.current.context` is no longer the
+Activity.** It is the overridden Context, whose base is the Activity, so `(context as Activity)`
+throws where walking the ContextWrapper chain works. That cast is already unsafe — Compose hands a
+Dialog a `ContextThemeWrapper`, so a screen hosted in a bottom sheet breaks on it with or without
+the simulation — but the simulation makes it fail on ordinary screens too, which is where it
+survives today.
+
+Two things must not be done here. A `Dialog` must never be handed the proxy WindowManager:
+`Window.setWindowManager` casts what it is given straight to `WindowManagerImpl`, so it is an
+immediate ClassCastException, and dialogs are re-hosted through the inflater instead. And the proxy
+is a reflection `Proxy` rather than an implementation, because `WindowManager` carries default
+methods — `getCurrentWindowMetrics()` and its neighbours throw in the interface itself — which
+Kotlin's `by` delegation does not forward, so `androidx.window` walked straight into the throwing
+body.
+
 ### The app survives a device switch, not the simulation toggle
 
 The content sits at one call site inside the simulation, so switching devices recomposes around it
@@ -138,7 +216,7 @@ still restores. This covers configuration changes only. Process death needs Data
 | Simulated insets / notch | The app inside the frame reads the host's insets. See below. |
 | Anything native | It is a composable in your process on your host OS. Fonts, rasterization and performance are the host's. |
 | Real dpi rendering | Reported dpi drives resource-bucket selection; pixels render at the host's density and are resampled. |
-| Global coordinates | `positionInWindow()` returns host-window coordinates while the simulated size says otherwise. Every dropdown and dialog bug in device_preview's tracker is this. |
+| Global coordinates | `positionInWindow()` returns host-window coordinates while the simulated size says otherwise. Dialogs and popups are inside the device now, but a `PopupPositionProvider` is still handed the host's display bounds and the popup's unscaled size, so a menu decides whether to flip against the host screen rather than the device's. The anchor is right; the threshold is not. |
 
 ### Simulated insets, and why they are not here yet
 

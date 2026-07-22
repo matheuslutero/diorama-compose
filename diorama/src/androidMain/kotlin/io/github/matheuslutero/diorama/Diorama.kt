@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -93,6 +94,8 @@ fun Diorama(
 
 @Composable
 private fun Stage(state: DioramaState, content: @Composable () -> Unit) {
+  val geometry = remember { SimulatedWindowGeometry() }
+
   // no navigationBarsPadding here: the dock below owns it
   Box(
     Modifier
@@ -110,13 +113,18 @@ private fun Stage(state: DioramaState, content: @Composable () -> Unit) {
       orientation = state.orientation,
       fontScale = state.fontScale,
       darkMode = state.darkMode,
+      geometry = geometry,
     ) {
       val screen = state.device.sizeFor(state.orientation)
       val bezel = if (state.isFrameVisible) BezelWidth else 0.dp
 
-      // bezel and screen scale as one unit; DeviceFrame pads the bezel back off
-      DeviceViewport(DpSize(screen.width + bezel * 2, screen.height + bezel * 2)) {
-        DeviceFrame(bezel) { content() }
+      SimulatedWindows(geometry) { screenModifier ->
+        // bezel and screen scale as one unit; DeviceFrame pads the bezel back off
+        DeviceViewport(DpSize(screen.width + bezel * 2, screen.height + bezel * 2)) {
+          DeviceFrame(bezel) {
+            Box(screenModifier.fillMaxSize(), propagateMinConstraints = true) { content() }
+          }
+        }
       }
     }
   }
