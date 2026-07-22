@@ -148,27 +148,26 @@ leaves the touch targets behind — the same failure `placeWithLayer` avoids in 
 `ViewGroup.dispatchTouchEvent` inverts a child's matrix, so one level of nesting is what makes the
 scale real.
 
-**The window is pinned to the simulated screen's rectangle, by correction rather than prediction.**
-`WindowManager.LayoutParams` offsets are measured from a parent frame whose bounds depend on the
-window's flags and the host's insets, so the layout reads back where it actually landed and aims at
-an absolute target. Nudging by the error each pass instead keeps nudging while the previous nudge is
-in flight, and the window walks off screen. It runs from a pre-draw listener, because moving a
-window does not lay its content out again — a correction applied from `onLayout` is the last one
-that ever runs.
+**The window is never moved. It is filled, and the device's rectangle is placed inside it.** Before
+it is shown it is set to `MATCH_PARENT` at the frame's origin, and from then on its bounds do not
+change; the layout translates its child to where the simulated screen is. Moving the window instead
+is the obvious approach and it is the wrong one: bounds that change after a window is shown resize
+its surface, and until the next buffer arrives the compositor stretches the last one across the new
+bounds. Those pixels are already drawn — hiding the View, or refusing to draw at all, takes none of
+them back, which is why the app's content flew in from outside the frame for the first few frames.
+Compose also calls `setLayout` from a SideEffect of its own once the window is up, so no placement
+would have stayed put anyway.
 
-**The scrim is drawn by the layout, not by the platform.** `FLAG_DIM_BEHIND` is a full-screen layer
-behind the window, so it greys out the host and the panel with it. Cleared, and redrawn inside the
-device. With `drawRect`, not `drawColor`: a floating window's surface is inflated to hold its
-elevation shadow and `drawColor` fills the clip, so the scrim spilled past the screen by the size of
-the shadow.
+Filling has one consequence to keep in mind: the layout must measure to what the *screen* needs, not
+to what the window offers. A window that wraps its content sizes itself to what the layout reports,
+which shrinks the next offer, which shrinks the report — a loop that settles short of the device
+with the dialog cut off mid-screen.
 
-**A dialog that wraps its content is measured the way ViewRootImpl would have.**
-`measureHierarchy` tries `config_prefDialogWidth` first — 320dp on a phone — and only widens if the
-content comes back `MEASURED_STATE_TOO_SMALL`. That is the whole reason an AlertDialog has margins
-rather than running edge to edge, and pinning the window took the pass away. The same three steps
-run against the simulated screen instead. Measured on a phone at 320dpi: the real device hands the
-dialog's text 544px, and so does this. Without it the same text got 624px and the dialog ran the
-full width of the device.
+**The window draws only inside the simulated screen.** Everything the layout draws is clipped to the
+screen's rounded rectangle — `DeviceFrame`'s own clip is in the composition and cannot reach a window
+drawn over it, so a full-screen destination squares off the device's corners without this. The scrim
+is drawn there too: `FLAG_DIM_BEHIND` is a full-screen layer behind the window, so the platform's own
+would grey out the host and the panel with it.
 
 Dismiss-on-tap-outside is Compose's own, and scaling invalidates it: `DialogWrapper.onTouchEvent`
 compares the event against the content's untransformed bounds, and `Dialog.cancel()` is overridden

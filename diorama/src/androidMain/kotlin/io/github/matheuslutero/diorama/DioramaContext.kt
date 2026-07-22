@@ -3,6 +3,7 @@ package io.github.matheuslutero.diorama
 import android.content.Context
 import android.content.res.Configuration
 import android.view.ContextThemeWrapper
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -89,17 +90,30 @@ internal class DioramaContext(
 
   /** Puts the simulated screen between the window and its content. */
   private fun reHost(content: ViewGroup, child: View, window: Window) {
+    // window.attributes hands back the live object, so read before anything below writes.
     val attrs = window.attributes
+    val contentGravity = attrs.gravity
+    val requestedWidth = attrs.width
     val dimAmount =
       if (attrs.flags and WindowManager.LayoutParams.FLAG_DIM_BEHIND != 0) attrs.dimAmount else 0f
-    // The platform's dim is a full-screen layer behind the window, so it would grey out the host
-    // and the panel along with it. The simulated screen draws its own, inside the device.
+    // A full-screen layer behind the window; the simulated screen draws its own instead.
     window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
 
-    val host = SimulatedWindowLayout(content.context, geometry, window, attrs.gravity, dimAmount)
+    // Filled once, before it is shown, so its bounds never change again — a resized surface is
+    // stretched across its new bounds until the next buffer arrives.
+    window.setGravity(Gravity.TOP or Gravity.LEFT)
+    val filling = window.attributes
+    filling.x = 0
+    filling.y = 0
+    filling.width = ViewGroup.LayoutParams.MATCH_PARENT
+    filling.height = ViewGroup.LayoutParams.MATCH_PARENT
+    window.attributes = filling
+
+    val host =
+      SimulatedWindowLayout(content.context, geometry, window, contentGravity, dimAmount, requestedWidth)
     val params = child.layoutParams
-    // The content view has no composition yet — AbstractComposeView creates one on attach, and the
-    // decor is still detached — so moving it now costs nothing.
+    // AbstractComposeView creates its composition on attach and the decor is still detached, so
+    // moving the content view costs nothing here.
     content.removeView(child)
     host.addView(child, ViewGroup.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
     content.addView(host, params)
@@ -114,14 +128,12 @@ internal class DioramaContext(
  * Wraps every window the app adds by hand — Popup, and anything else built on an AbstractComposeView
  * — in a [SimulatedWindowLayout], so it is drawn at the simulation's scale.
  *
- * The position is left alone. Compose computes a popup's x/y from `positionInWindow`, which already
- * runs through the viewport's layer, so the anchor was already right; only the size was not.
+ * The position is left alone: Compose computes a popup's x/y from `positionInWindow`, which already
+ * runs through the viewport's layer, so the anchor was right and only the size was not.
  *
- * This is a reflection Proxy rather than an implementation, and that is not laziness. WindowManager
- * carries default methods — getCurrentWindowMetrics() and its neighbours throw
- * UnsupportedOperationException in the interface itself — and Kotlin's `by` delegation does not
- * forward a Java default method, so androidx.window walks straight into the throwing body. A Proxy
- * intercepts every method on the interface, including the ones added after this was written.
+ * A reflection Proxy rather than an implementation, because WindowManager carries default methods —
+ * getCurrentWindowMetrics() and its neighbours throw in the interface itself — and Kotlin's `by`
+ * delegation does not forward those, so androidx.window walks into the throwing body.
  */
 private class SimulatedWindowManager(
   private val delegate: WindowManager,

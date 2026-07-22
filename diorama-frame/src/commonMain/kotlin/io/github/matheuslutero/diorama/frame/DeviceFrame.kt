@@ -41,7 +41,7 @@ fun DeviceFrame(
           Modifier
             .background(Color(0xFF15151A), RoundedCornerShape(bezel * 2.5f))
             .padding(bezel)
-            .clip(RoundedCornerShape(bezel * 1.5f))
+            .clip(RoundedCornerShape(screenCornerRadius(bezel)))
         } else {
           Modifier
         },
@@ -50,3 +50,11 @@ fun DeviceFrame(
     content()
   }
 }
+
+/**
+ * The corner the screen is cut to, for a given bezel.
+ *
+ * Anything that has to line up with the screen but cannot go through the clip above — an Android
+ * window drawn over the frame — needs the same number from here rather than a copy that drifts.
+ */
+fun screenCornerRadius(bezel: Dp): Dp = bezel * 1.5f

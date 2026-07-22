@@ -27,16 +27,28 @@ internal class SimulatedWindowGeometry {
   var screenTop: Int = 0
     private set
 
+  /** The screen's corner, in the same pixels: a window over the frame has to be cut to it too. */
+  var cornerRadiusPx: Float = 0f
+    private set
+
   val isReady: Boolean get() = widthPx > 0 && heightPx > 0
 
   val scaledWidth: Int get() = (widthPx * scale).roundToInt()
   val scaledHeight: Int get() = (heightPx * scale).roundToInt()
 
-  fun update(widthPx: Int, heightPx: Int, scale: Float, screenLeft: Int, screenTop: Int) {
+  fun update(
+    widthPx: Int,
+    heightPx: Int,
+    scale: Float,
+    screenLeft: Int,
+    screenTop: Int,
+    cornerRadiusPx: Float,
+  ) {
     this.widthPx = widthPx
     this.heightPx = heightPx
     this.scale = scale
     this.screenLeft = screenLeft
     this.screenTop = screenTop
+    this.cornerRadiusPx = cornerRadiusPx
   }
 }

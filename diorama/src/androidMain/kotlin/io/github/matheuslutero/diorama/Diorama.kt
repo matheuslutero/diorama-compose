@@ -31,6 +31,7 @@ import io.github.matheuslutero.diorama.frame.DeviceFrame
 import io.github.matheuslutero.diorama.frame.DeviceSpec
 import io.github.matheuslutero.diorama.frame.DeviceViewport
 import io.github.matheuslutero.diorama.frame.Devices
+import io.github.matheuslutero.diorama.frame.screenCornerRadius
 
 private val BezelWidth = 12.dp
 
@@ -118,7 +119,7 @@ private fun Stage(state: DioramaState, content: @Composable () -> Unit) {
       val screen = state.device.sizeFor(state.orientation)
       val bezel = if (state.isFrameVisible) BezelWidth else 0.dp
 
-      SimulatedWindows(geometry) { screenModifier ->
+      SimulatedWindows(geometry, screenCornerRadius(bezel)) { screenModifier ->
         // bezel and screen scale as one unit; DeviceFrame pads the bezel back off
         DeviceViewport(DpSize(screen.width + bezel * 2, screen.height + bezel * 2)) {
           DeviceFrame(bezel) {
