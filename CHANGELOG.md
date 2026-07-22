@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/matheuslutero/diorama-compose/compare/0.1.0...0.2.0) (2026-07-22)
+
+
+### Features
+
+* open dialogs, sheets and popups inside the simulated device ([#6](https://github.com/matheuslutero/diorama-compose/issues/6)) ([d7f7d73](https://github.com/matheuslutero/diorama-compose/commit/d7f7d73e90939b177fbda36e1cde8f3c699cf7c6))
+
+
+### Documentation
+
+* add install instructions ([#4](https://github.com/matheuslutero/diorama-compose/issues/4)) ([bfe5741](https://github.com/matheuslutero/diorama-compose/commit/bfe5741daf45e849dc252b128c3764cfe385334c))
+
 ## 0.1.0 (2026-07-16)
 
 
