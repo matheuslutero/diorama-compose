@@ -33,17 +33,28 @@ fun DeviceFrame(
   modifier: Modifier = Modifier,
   content: @Composable () -> Unit,
 ) {
-  if (bezel <= 0.dp) {
-    Box(modifier.fillMaxSize()) { content() }
-    return
-  }
   Box(
     modifier
       .fillMaxSize()
-      .background(Color(0xFF15151A), RoundedCornerShape(bezel * 2.5f))
-      .padding(bezel)
-      .clip(RoundedCornerShape(bezel * 1.5f)),
+      .then(
+        if (bezel > 0.dp) {
+          Modifier
+            .background(Color(0xFF15151A), RoundedCornerShape(bezel * 2.5f))
+            .padding(bezel)
+            .clip(RoundedCornerShape(screenCornerRadius(bezel)))
+        } else {
+          Modifier
+        },
+      ),
   ) {
     content()
   }
 }
+
+/**
+ * The corner the screen is cut to, for a given bezel.
+ *
+ * Anything that has to line up with the screen but cannot go through the clip above — an Android
+ * window drawn over the frame — needs the same number from here rather than a copy that drifts.
+ */
+fun screenCornerRadius(bezel: Dp): Dp = bezel * 1.5f

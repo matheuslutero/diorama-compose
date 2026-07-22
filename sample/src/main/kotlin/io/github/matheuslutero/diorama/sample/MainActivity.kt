@@ -23,11 +23,19 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -43,6 +51,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.window.core.layout.WindowSizeClass
 import io.github.matheuslutero.diorama.Diorama
 
@@ -163,6 +173,20 @@ private fun Catalog(
     }
 
     Spacer(Modifier.height(16.dp))
+    // The keyboard is the host's: opening it must not move anything inside the device.
+    var note by remember { mutableStateOf("") }
+    TextField(
+      value = note,
+      onValueChange = { note = it },
+      label = { Text("Note") },
+      singleLine = true,
+      modifier = Modifier.fillMaxWidth(),
+    )
+
+    Spacer(Modifier.height(16.dp))
+    Overlays()
+
+    Spacer(Modifier.height(16.dp))
     LazyVerticalGrid(
       columns = GridCells.Adaptive(minSize = 168.dp),
       horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -188,6 +212,84 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
       .clickable(onClick = onClick)
       .padding(horizontal = 14.dp, vertical = 8.dp),
   )
+}
+
+/**
+ * Every way Compose leaves the composition on Android, one button each. A Dialog and a
+ * ModalBottomSheet each open a ComponentDialog; a DropdownMenu adds a Popup straight to the
+ * WindowManager. A full-screen destination — a route the navigation graph opens as a dialog — is
+ * the same ComponentDialog with usePlatformDefaultWidth off. They are all separate Android windows,
+ * so they are all what the simulation has to catch.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun Overlays() {
+  var dialog by remember { mutableStateOf(false) }
+  var sheet by remember { mutableStateOf(false) }
+  var menu by remember { mutableStateOf(false) }
+  var screen by remember { mutableStateOf(false) }
+
+  Row(
+    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
+    Button(onClick = { dialog = true }) { Text("Dialog") }
+    Button(onClick = { sheet = true }) { Text("Sheet") }
+    Box {
+      Button(onClick = { menu = true }) { Text("Menu") }
+      DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+        Filters.forEach { name ->
+          DropdownMenuItem(text = { Text(name) }, onClick = { menu = false })
+        }
+      }
+    }
+    Button(onClick = { screen = true }) { Text("Screen") }
+  }
+
+  if (screen) {
+    Dialog(
+      onDismissRequest = { screen = false },
+      properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+      Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+        Column(Modifier.fillMaxSize().safeDrawingPadding().padding(20.dp)) {
+          Text("Full screen", style = MaterialTheme.typography.headlineSmall)
+          Text(
+            "A destination outside the default graph. It fills the simulated screen, not the host's.",
+            style = MaterialTheme.typography.bodyMedium,
+          )
+          Spacer(Modifier.height(16.dp))
+          Button(onClick = { screen = false }) { Text("Close") }
+        }
+      }
+    }
+  }
+
+  if (dialog) {
+    AlertDialog(
+      onDismissRequest = { dialog = false },
+      title = { Text("Leave for Kyoto?") },
+      text = {
+        Column {
+          Text("This dialog belongs inside the simulated device, at the device's own width.")
+          TextField(value = "", onValueChange = {}, label = { Text("In dialog") })
+        }
+      },
+      confirmButton = { TextButton(onClick = { dialog = false }) { Text("Book") } },
+      dismissButton = { TextButton(onClick = { dialog = false }) { Text("Cancel") } },
+    )
+  }
+
+  if (sheet) {
+    ModalBottomSheet(onDismissRequest = { sheet = false }) {
+      Column(Modifier.fillMaxWidth().padding(20.dp)) {
+        Text("Filters", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        Filters.forEach { Text(it, Modifier.padding(vertical = 8.dp)) }
+        Spacer(Modifier.height(24.dp))
+      }
+    }
+  }
 }
 
 @Composable

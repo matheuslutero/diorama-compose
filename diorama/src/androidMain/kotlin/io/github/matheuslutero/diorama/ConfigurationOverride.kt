@@ -2,7 +2,6 @@ package io.github.matheuslutero.diorama
 
 import android.content.res.Configuration
 import android.util.DisplayMetrics
-import android.view.ContextThemeWrapper
 import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -35,11 +34,12 @@ import androidx.compose.ui.unit.LayoutDirection
 @Composable
 internal fun OverriddenConfiguration(
   configuration: Configuration,
+  geometry: SimulatedWindowGeometry,
   content: @Composable () -> Unit,
 ) {
   val context = LocalContext.current
-  val overriddenContext = remember(context, configuration) {
-    ContextThemeWrapper(context, 0).apply { applyOverrideConfiguration(configuration) }
+  val overriddenContext = remember(context, configuration, geometry) {
+    DioramaContext(context, configuration, geometry)
   }
   val fontFamilyResolver = remember(overriddenContext) { createFontFamilyResolver(overriddenContext) }
 

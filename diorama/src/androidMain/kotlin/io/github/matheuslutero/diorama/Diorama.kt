@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +32,7 @@ import io.github.matheuslutero.diorama.frame.DeviceFrame
 import io.github.matheuslutero.diorama.frame.DeviceSpec
 import io.github.matheuslutero.diorama.frame.DeviceViewport
 import io.github.matheuslutero.diorama.frame.Devices
+import io.github.matheuslutero.diorama.frame.screenCornerRadius
 
 private val BezelWidth = 12.dp
 
@@ -93,15 +96,20 @@ fun Diorama(
 
 @Composable
 private fun Stage(state: DioramaState, content: @Composable () -> Unit) {
+  val geometry = remember { SimulatedWindowGeometry() }
+
   // no navigationBarsPadding here: the dock below owns it
   Box(
     Modifier
       .fillMaxSize()
       .statusBarsPadding()
       .displayCutoutPadding()
-      // The virtual device has no host system bars, so the app inside sees none of the host's
-      // remaining insets either.
-      .consumeWindowInsets(WindowInsets.systemBars.union(WindowInsets.displayCutout))
+      // The app inside sees none of the host's insets, the keyboard's included: the host's IME
+      // covers the host's screen, not the device's, and its height in the device's own dp is a
+      // number no device would report.
+      .consumeWindowInsets(
+        WindowInsets.systemBars.union(WindowInsets.displayCutout).union(WindowInsets.ime),
+      )
       .padding(16.dp),
     contentAlignment = Alignment.Center,
   ) {
@@ -110,13 +118,18 @@ private fun Stage(state: DioramaState, content: @Composable () -> Unit) {
       orientation = state.orientation,
       fontScale = state.fontScale,
       darkMode = state.darkMode,
+      geometry = geometry,
     ) {
       val screen = state.device.sizeFor(state.orientation)
       val bezel = if (state.isFrameVisible) BezelWidth else 0.dp
 
-      // bezel and screen scale as one unit; DeviceFrame pads the bezel back off
-      DeviceViewport(DpSize(screen.width + bezel * 2, screen.height + bezel * 2)) {
-        DeviceFrame(bezel) { content() }
+      SimulatedWindows(geometry, screenCornerRadius(bezel)) { screenModifier ->
+        // bezel and screen scale as one unit; DeviceFrame pads the bezel back off
+        DeviceViewport(DpSize(screen.width + bezel * 2, screen.height + bezel * 2)) {
+          DeviceFrame(bezel) {
+            Box(screenModifier.fillMaxSize(), propagateMinConstraints = true) { content() }
+          }
+        }
       }
     }
   }

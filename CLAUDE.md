@@ -50,6 +50,10 @@ trusting an earlier run.
   inherits it silently.
 - **The panel stays a sibling of the preview, never an ancestor.** That is what keeps the overrides
   out of the tool's own UI.
+- **`LocalView` belongs to the simulation.** `Popup` and `Dialog` capture it and then read *its*
+  Context, so overriding `LocalContext` alone reaches neither. Every window the app opens is
+  re-hosted through that View and measured at the device's pixel size, drawing scaled — never the
+  other way round, and never by transforming a window's root view, which nothing inverts for touch.
 - **The panel never covers the stage.** Every control in it changes the device; hiding the device
   while they are in reach defeats the tool. It displaces the stage and the device rescales.
 - **Offer only values a device can report.** Density steps through the real `DisplayMetrics` buckets
